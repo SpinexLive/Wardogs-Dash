@@ -24,6 +24,12 @@ body {
   flex-direction: column;
 }
 
+/* Pages with an internally-scrolling region (e.g. Members) opt into a hard-capped viewport. */
+body.fixed-viewport {
+  height: 100vh;
+  overflow: hidden;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -179,6 +185,7 @@ a {
   display: flex;
   flex-direction: column;
   padding-bottom: 32px;
+  overflow: hidden;
 }
 
 .panel--fill {
@@ -186,6 +193,7 @@ a {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .member-search {
