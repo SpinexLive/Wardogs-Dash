@@ -7,11 +7,11 @@ services:
       - .env
     volumes:
       - ./data:/app/data
-    # Host networking lets Caddy on this same box reach the app at 127.0.0.1:<PORT>, and lets the
-    # app reach a local RCON server via 127.0.0.1 if you ever run one on this VPS. It also means
-    # this app shares one port space with everything else on the box — set a free PORT in .env
-    # (see .env.example) and match it in Caddyfile's reverse_proxy line. If you'd rather use normal
-    # Docker networking instead, remove this and add `ports: ["127.0.0.1:<PORT>:<PORT>"]`.
+    # Host networking lets our own Caddy (below) reach the app at 127.0.0.1:<PORT>, and lets the
+    # app reach RCON servers over the network. It also means this app shares one port space with
+    # everything else on the box — set a free PORT in .env (see .env.example) and match it in
+    # Caddyfile's reverse_proxy line. If you'd rather use normal Docker networking instead, remove
+    # this and add `ports: ["127.0.0.1:<PORT>:<PORT>"]`.
     network_mode: host
 
   caddy:
