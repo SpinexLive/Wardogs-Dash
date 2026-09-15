@@ -49,16 +49,66 @@ src/
   config.js          env var loading
   server.js           app entry point
   lib/discord.js      Discord OAuth2 + bot REST API calls
+  lib/rcon.js          Wardogs RCON API client (VIP/reserved slots)
+  lib/roster.js        computes who should have VIP
   lib/store.js         reads/writes data/access.json
+  lib/steamStore.js    reads/writes data/steam-ids.json
   middleware/auth.js  auth/admin route guards
-  routes/             auth, dashboard, settings routes
+  routes/             auth, dashboard, members, settings routes
 views/                EJS templates
 public/css/           styles
+public/images/        logo/static images
 data/access.json      role access lists (gitignored, created on first run)
+data/steam-ids.json   discord user id -> steam id (gitignored, created on first run)
+data/sessions/        session store files (gitignored, created on first run)
 ```
+
+## Deploying to your VPS with Docker
+
+This repo ships with a `docker-compose.yml` that runs the app plus a Caddy reverse proxy
+(automatic HTTPS via Let's Encrypt) side by side, both using host networking. Concretely, for a
+VPS at `45.151.81.182` with no domain of its own, we use a **sslip.io hostname**
+(`45-151-81-182.sslip.io`) — it resolves straight to that IP, so Caddy can get a real, trusted
+certificate for it with zero DNS setup.
+
+1. **Push this repo to GitHub** (or GitLab), then on the VPS:
+   ```
+   git clone <your-repo-url> wardogs-dash
+   cd wardogs-dash
+   ```
+2. **Update the Discord app's redirect URI.** In the Developer Portal → OAuth2 → Redirects, add:
+   ```
+   https://45-151-81-182.sslip.io/auth/discord/callback
+   ```
+   (keep your `http://localhost:3000/...` one too, for local dev).
+3. **Create `.env` on the VPS** (copy `.env.example` and fill in):
+   - `NODE_ENV=production`
+   - `DISCORD_CALLBACK_URL=https://45-151-81-182.sslip.io/auth/discord/callback`
+   - `SESSION_SECRET` — generate a fresh one, don't reuse your local dev value:
+     `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+   - `DISCORD_CLIENT_ID/SECRET`, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `ADMIN_ROLE_IDS` — same
+     values as local.
+   - `RCON_HOST`/`RCON_PORT`/`RCON_PASSWORD` — leave `RCON_HOST=127.0.0.1` if the game server runs
+     on this same VPS (host networking makes that work); otherwise point it at the game server over
+     a VPN/SSH tunnel. Never expose the RCON port to the public internet.
+4. **Open the firewall** for HTTP/HTTPS if it isn't already (Caddy needs 80 for the ACME
+   challenge and 443 for TLS): e.g. `ufw allow 80,443/tcp`.
+5. **Build and run:**
+   ```
+   docker compose up -d --build
+   ```
+   Caddy will automatically request a Let's Encrypt certificate for
+   `45-151-81-182.sslip.io` on first boot (needs port 80 reachable from the internet). The `./data`
+   volume persists `access.json`, `steam-ids.json`, and sessions across rebuilds.
+6. **Visit** `https://45-151-81-182.sslip.io` and log in with your admin Discord account.
+7. **Redeploying after code changes:** `git pull` on the VPS, then `docker compose up -d --build`
+   again. The `./data` volume is untouched by rebuilds.
+
+If you later get a real domain, just swap the hostname in `Caddyfile` and `DISCORD_CALLBACK_URL`
+(and update the Discord redirect URI) — everything else stays the same.
 
 ## Notes / next steps
 
-- Sessions currently use the default in-memory store — fine for local dev, but swap for a
-  persistent store (e.g. `connect-redis`) before running multiple instances in production.
-- A `Dockerfile` will be added later for VPS deployment.
+- Sessions are stored in `data/sessions` via `session-file-store`, so they survive restarts and
+  redeploys as long as the `data` volume persists. For multiple replicas/instances you'd want a
+  shared store (e.g. Redis) instead.

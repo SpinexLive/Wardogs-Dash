@@ -2,6 +2,7 @@ node_modules/
 .env
 data/access.json
 data/steam-ids.json
+data/sessions/
 npm-debug.log*
 *.log
 .DS_Store
