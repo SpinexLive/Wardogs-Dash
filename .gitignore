@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/access.json
+data/steam-ids.json
+npm-debug.log*
+*.log
+.DS_Store

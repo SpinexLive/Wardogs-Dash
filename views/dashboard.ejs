@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Dashboard - Wardogs Dash' }) %>
+</head>
+<body>
+  <%- include('partials/nav') %>
+
+  <main class="page">
+    <div class="page-header">
+      <% if (guild.icon) { %>
+        <img class="guild-icon" src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png" alt="" />
+      <% } %>
+      <div>
+        <h1><%= guild.name %></h1>
+        <p class="muted">Welcome back, <%= user.username %> 👋</p>
+      </div>
+    </div>
+
+    <section class="cards">
+      <div class="card">
+        <span class="card-label">Total Members</span>
+        <span class="card-value"><%= guild.approximate_member_count ?? '—' %></span>
+      </div>
+      <div class="card">
+        <span class="card-label">Online Now</span>
+        <span class="card-value"><%= guild.approximate_presence_count ?? '—' %></span>
+      </div>
+      <div class="card">
+        <span class="card-label">Your Access</span>
+        <span class="card-value"><%= access.isAdmin ? 'Admin' : 'Member' %></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Bot &amp; Community Overview</h2>
+      <p class="muted">
+        This is your dashboard home. Hook up more bot stats, moderation tools, or event widgets here as
+        the project grows.
+      </p>
+    </section>
+
+    <% if (access.isAdmin) { %>
+      <section class="panel">
+        <h2>Quick Links</h2>
+        <p class="muted">
+          <a href="/members" class="inline-link">View Members</a> &mdash; roster, Steam IDs, and stats.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>VIP Slots</h2>
+        <p class="muted">
+          Syncs the server's reserved VIP slots to everyone with the Member Role. Anyone with the
+          Recruit Role is skipped even if they also hold the Member Role.
+        </p>
+
+        <% if (vipSuccess) { %><p class="save-confirm"><%= vipSuccess %></p><% } %>
+        <% if (vipError) { %><p class="error-banner"><%= vipError %></p><% } %>
+
+        <form method="POST" action="/dashboard/update-vip">
+          <button type="submit" class="btn-primary">Update VIP Slots</button>
+        </form>
+      </section>
+    <% } %>
+  </main>
+</body>
+</html>

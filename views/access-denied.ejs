@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Access Denied - Wardogs Dash' }) %>
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="login-logo">🚫</div>
+    <h1>Access Denied</h1>
+    <% if (user) { %>
+      <p>Hey <strong><%= user.username %></strong>, your Discord roles don't have access to this dashboard yet.</p>
+      <p class="fine-print">Ask a server admin to grant your role access from the Settings page.</p>
+      <a class="discord-btn" href="/auth/logout">Logout</a>
+    <% } else { %>
+      <p>You need to log in with an authorized Discord account.</p>
+      <a class="discord-btn" href="/">Back to Login</a>
+    <% } %>
+  </div>
+</body>
+</html>

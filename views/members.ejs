@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Members - Wardogs Dash' }) %>
+</head>
+<body>
+  <%- include('partials/nav') %>
+
+  <main class="page">
+    <div class="page-header">
+      <div>
+        <h1>Members</h1>
+        <p class="muted">Anyone holding a Member Role. Click a Steam ID to add or edit it.</p>
+      </div>
+    </div>
+
+    <section class="panel">
+      <% if (vipError) { %>
+        <p class="error-banner"><%= vipError %></p>
+      <% } else if (!vipConfigured) { %>
+        <p class="fine-print">VIP lookup isn't configured yet — set RCON_HOST/RCON_PORT/RCON_PASSWORD in .env to enable it.</p>
+      <% } %>
+
+      <% if (!hasMemberRoles) { %>
+        <p class="fine-print">
+          No Member Roles are configured yet. Pick some under
+          <a href="/settings" class="inline-link">Settings</a> to populate this list.
+        </p>
+      <% } else if (!members.length) { %>
+        <p class="fine-print">No server members currently hold a Member Role.</p>
+      <% } else { %>
+        <table class="roles-table">
+          <thead>
+            <tr>
+              <th>Discord Nickname</th>
+              <th>Steam ID</th>
+              <th>Kills</th>
+              <th>Deaths</th>
+              <th>K/D</th>
+              <th>VIP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% members.forEach((member) => { %>
+              <tr>
+                <td>
+                  <%= member.nickname %>
+                  <% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %>
+                  <% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %>
+                </td>
+                <td>
+                  <button type="button" class="steam-id-btn" data-dialog="steam-dialog-<%= member.id %>">
+                    <%= member.steamId || 'Not set' %>
+                  </button>
+                </td>
+                <td class="muted">—</td>
+                <td class="muted">—</td>
+                <td class="muted">—</td>
+                <td>
+                  <% if (member.vip) { %>
+                    <span class="vip-badge">VIP</span>
+                  <% } else { %>
+                    <span class="muted">—</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+
+        <% members.forEach((member) => { %>
+          <dialog id="steam-dialog-<%= member.id %>" class="steam-dialog">
+            <form method="POST" action="/members/steam-id">
+              <input type="hidden" name="userId" value="<%= member.id %>" />
+              <label for="steamId-<%= member.id %>">Steam ID for <%= member.nickname %></label>
+              <input
+                type="text"
+                id="steamId-<%= member.id %>"
+                name="steamId"
+                value="<%= member.steamId || '' %>"
+                placeholder="e.g. 76561198000000000"
+                autocomplete="off"
+              />
+              <div class="dialog-actions">
+                <button type="button" class="btn-secondary" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn-primary">Save</button>
+              </div>
+            </form>
+          </dialog>
+        <% }) %>
+      <% } %>
+    </section>
+  </main>
+  <script src="/js/app.js"></script>
+</body>
+</html>
