@@ -6,12 +6,22 @@ function isConfigured() {
   return Boolean(config.RCON_PASSWORD);
 }
 
+const REQUEST_TIMEOUT_MS = 5000;
+
 async function request(path, options = {}) {
   const url = `http://${config.RCON_HOST}:${config.RCON_PORT}${path}`;
-  return fetch(url, {
-    ...options,
-    headers: { Authorization: `Bearer ${config.RCON_PASSWORD}`, ...(options.headers || {}) },
-  });
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      headers: { Authorization: `Bearer ${config.RCON_PASSWORD}`, ...(options.headers || {}) },
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      throw new Error(`RCON server at ${config.RCON_HOST}:${config.RCON_PORT} did not respond in time.`);
+    }
+    throw err;
+  }
 }
 
 // Returns an array of reserved-slot SteamID64 strings.
