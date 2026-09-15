@@ -20,6 +20,8 @@ body {
   background: radial-gradient(circle at top, #1a1a1d 0%, #0a0a0b 70%);
   color: var(--text);
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 a {
@@ -165,8 +167,61 @@ a {
 
 .page {
   max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
   padding: 32px 24px 64px;
+}
+
+/* Caps a page to the remaining viewport height so only an inner region scrolls. */
+.page--fill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 32px;
+}
+
+.panel--fill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.member-search {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.member-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.table-scroll table {
+  margin: 0;
+}
+
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-elevated);
+  z-index: 1;
 }
 
 .page-header {

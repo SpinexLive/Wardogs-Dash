@@ -6,7 +6,7 @@
 <body>
   <%- include('partials/nav') %>
 
-  <main class="page">
+  <main class="page page--fill">
     <div class="page-header">
       <div>
         <h1>Members</h1>
@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <section class="panel">
+    <section class="panel panel--fill">
       <% if (vipError) { %>
         <p class="error-banner"><%= vipError %></p>
       <% } else if (!vipConfigured) { %>
@@ -29,44 +29,56 @@
       <% } else if (!members.length) { %>
         <p class="fine-print">No server members currently hold a Member Role.</p>
       <% } else { %>
-        <table class="roles-table">
-          <thead>
-            <tr>
-              <th>Discord Nickname</th>
-              <th>Steam ID</th>
-              <th>Kills</th>
-              <th>Deaths</th>
-              <th>K/D</th>
-              <th>VIP</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% members.forEach((member) => { %>
+        <input
+          type="search"
+          id="member-search"
+          class="member-search"
+          placeholder="Search members..."
+          autocomplete="off"
+        />
+
+        <div class="table-scroll">
+          <table class="roles-table">
+            <thead>
               <tr>
-                <td>
-                  <%= member.nickname %>
-                  <% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %>
-                  <% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %>
-                </td>
-                <td>
-                  <button type="button" class="steam-id-btn" data-dialog="steam-dialog-<%= member.id %>">
-                    <%= member.steamId || 'Not set' %>
-                  </button>
-                </td>
-                <td class="muted">—</td>
-                <td class="muted">—</td>
-                <td class="muted">—</td>
-                <td>
-                  <% if (member.vip) { %>
-                    <span class="vip-badge">VIP</span>
-                  <% } else { %>
-                    <span class="muted">—</span>
-                  <% } %>
-                </td>
+                <th>Discord Nickname</th>
+                <th>Steam ID</th>
+                <th>Kills</th>
+                <th>Deaths</th>
+                <th>K/D</th>
+                <th>VIP</th>
               </tr>
-            <% }) %>
-          </tbody>
-        </table>
+            </thead>
+            <tbody id="member-rows">
+              <% members.forEach((member) => { %>
+                <tr>
+                  <td>
+                    <%= member.nickname %>
+                    <% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %>
+                    <% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %>
+                  </td>
+                  <td>
+                    <button type="button" class="steam-id-btn" data-dialog="steam-dialog-<%= member.id %>">
+                      <%= member.steamId || 'Not set' %>
+                    </button>
+                  </td>
+                  <td class="muted">—</td>
+                  <td class="muted">—</td>
+                  <td class="muted">—</td>
+                  <td>
+                    <% if (member.vip) { %>
+                      <span class="vip-badge">VIP</span>
+                    <% } else { %>
+                      <span class="muted">—</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <p id="member-search-empty" class="fine-print" hidden>No members match your search.</p>
 
         <% members.forEach((member) => { %>
           <dialog id="steam-dialog-<%= member.id %>" class="steam-dialog">
