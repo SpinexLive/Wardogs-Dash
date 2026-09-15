@@ -7,18 +7,19 @@ services:
       - .env
     volumes:
       - ./data:/app/data
-    # Host networking makes 127.0.0.1 inside the container mean the VPS itself, so RCON_HOST=127.0.0.1
-    # (the default) reaches a game server bound to localhost, and a reverse proxy on the host can
-    # just proxy to localhost:3000. If you'd rather use normal Docker networking instead, remove this,
-    # add `ports: ["127.0.0.1:3000:3000"]`, and point RCON_HOST at host.docker.internal (with an
-    # `extra_hosts: ["host.docker.internal:host-gateway"]` entry) instead of 127.0.0.1.
+    # Host networking lets Caddy on this same box reach the app at 127.0.0.1:<PORT>, and lets the
+    # app reach a local RCON server via 127.0.0.1 if you ever run one on this VPS. It also means
+    # this app shares one port space with everything else on the box — set a free PORT in .env
+    # (see .env.example) and match it in Caddyfile's reverse_proxy line. If you'd rather use normal
+    # Docker networking instead, remove this and add `ports: ["127.0.0.1:<PORT>:<PORT>"]`.
     network_mode: host
 
   caddy:
     image: caddy:2-alpine
     container_name: wardogs-caddy
     restart: unless-stopped
-    # Host networking so Caddy can bind the VPS's real :80/:443 and reach the app at 127.0.0.1:3000.
+    # Host networking so Caddy can bind the VPS's real :80/:443 and reach the app at 127.0.0.1:<PORT>
+    # (whatever PORT is set to in .env / Caddyfile).
     network_mode: host
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile

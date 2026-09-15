@@ -83,14 +83,17 @@ certificate for it with zero DNS setup.
    (keep your `http://localhost:3000/...` one too, for local dev).
 3. **Create `.env` on the VPS** (copy `.env.example` and fill in):
    - `NODE_ENV=production`
+   - `PORT=3001` — this VPS already runs another app on 3000 (host networking shares one port
+     space across every app on the box), so this app needs its own free port. `Caddyfile` is
+     already set to proxy to `3001`; if you pick a different port, update it there too.
    - `DISCORD_CALLBACK_URL=https://45-151-81-182.sslip.io/auth/discord/callback`
    - `SESSION_SECRET` — generate a fresh one, don't reuse your local dev value:
      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
    - `DISCORD_CLIENT_ID/SECRET`, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `ADMIN_ROLE_IDS` — same
      values as local.
-   - `RCON_HOST`/`RCON_PORT`/`RCON_PASSWORD` — leave `RCON_HOST=127.0.0.1` if the game server runs
-     on this same VPS (host networking makes that work); otherwise point it at the game server over
-     a VPN/SSH tunnel. Never expose the RCON port to the public internet.
+   - `RCON_HOST`/`RCON_PORT`/`RCON_PASSWORD` — point at wherever the game server's RCON listener
+     actually is (it doesn't have to be this VPS). Never expose the RCON port to the public
+     internet; reach it over a VPN/SSH tunnel if it's remote.
 4. **Open the firewall** for HTTP/HTTPS if it isn't already (Caddy needs 80 for the ACME
    challenge and 443 for TLS): e.g. `ufw allow 80,443/tcp`.
 5. **Build and run:**
