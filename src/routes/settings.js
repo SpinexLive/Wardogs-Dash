@@ -52,9 +52,11 @@ router.post('/roles', requireAuth, requireAdmin, async (req, res, next) => {
 
     const currentAccess = store.readAccess();
     const leaderboardChannelId = req.body.leaderboardChannelId || null;
+    const cashTotalChannelId = req.body.cashTotalChannelId || null;
     store.writeAccess({
       ...currentAccess, adminRoleIds, allowedRoleIds, memberRoleIds, recruitRankRoleId, memberRankRoleId,
       leaderboardChannelId,
+      cashTotalChannelId,
       // A message in a different channel cannot be edited; require one manual Send there.
       leaderboardMessageId: currentAccess.leaderboardChannelId === leaderboardChannelId ? currentAccess.leaderboardMessageId : null,
     });

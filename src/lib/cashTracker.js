@@ -1,6 +1,7 @@
 const rcon = require('./rcon');
 const rosterDb = require('./rosterDb');
 const leaderboard = require('./leaderboard');
+const cashCounter = require('./cashCounter');
 
 const POLL_INTERVAL_MS = 60 * 1000;
 let polling = false;
@@ -13,6 +14,7 @@ async function pollCash() {
     const [players, status] = await Promise.all([rcon.getPlayers(), rcon.getServerStatus()]);
     rosterDb.recordCashSnapshot(players);
     rosterDb.recordMatchSnapshot(status, players);
+    await cashCounter.updateCashTotalChannel().catch((err) => console.warn(`[cash-counter] ${err.message}`));
     // The Discord message is only edited after an admin has explicitly sent it once.
     await leaderboard.updateLeaderboard().catch((err) => console.warn(`[leaderboard] ${err.message}`));
   } catch (err) {

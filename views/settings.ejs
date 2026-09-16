@@ -136,6 +136,16 @@
               <% }) %>
             </select>
           </div>
+          <div class="select-group settings-card">
+            <p class="eyebrow">Discord</p><label for="cashTotalChannelId">Live Cash Counter Channel</label>
+            <p class="fine-print">The bot renames this text channel after each server poll, for example: ┊💵┊＄3‚332‚878.</p>
+            <select id="cashTotalChannelId" name="cashTotalChannelId" class="role-select">
+              <option value="">No channel selected</option>
+              <% channels.forEach((channel) => { %>
+                <option value="<%= channel.id %>" <%= access.cashTotalChannelId === channel.id ? 'selected' : '' %>># <%= channel.name %></option>
+              <% }) %>
+            </select>
+          </div>
         </div>
 
         <div class="settings-actions">

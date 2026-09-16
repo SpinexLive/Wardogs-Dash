@@ -117,6 +117,16 @@ async function updateLeaderboardMessage(channelId, messageId, payload) {
   return res.json();
 }
 
+async function renameChannel(channelId, name) {
+  const res = await fetch(`${API_BASE}/channels/${channelId}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error(`Failed to rename cash-total channel: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 module.exports = {
   getAuthorizeUrl,
   exchangeCode,
@@ -128,4 +138,5 @@ module.exports = {
   getGuildTextChannels,
   createLeaderboardMessage,
   updateLeaderboardMessage,
+  renameChannel,
 };
