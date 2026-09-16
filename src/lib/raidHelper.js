@@ -11,7 +11,13 @@ async function request(path) {
 function eventName(event) { return String(event.title || event.name || event.displayTitle || 'Untitled match'); }
 function eventStart(event) { return Number(event.startTime || event.start || event.time || 0); }
 function isMatch(event) { return /^⚔️/.test(eventName(event)); }
-function formatEvent(event) { const signups = event.signUps || event.signups || []; return { id: String(event.id), name: eventName(event), startTime: eventStart(event), signups: signups.length || Number(event.signUpCount || 0) }; }
+function isRosterEligible(signup) {
+  return !['tentative', 'absence'].includes(String(signup.cClassName || signup.className || '').toLowerCase());
+}
+function formatEvent(event) {
+  const signups = event.signUps || event.signups || [];
+  return { id: String(event.id), name: eventName(event), startTime: eventStart(event), signups: signups.length ? signups.filter(isRosterEligible).length : Number(event.signUpCount || 0) };
+}
 
 async function getRosterEvents() {
   const payload = await request(`/servers/${encodeURIComponent(config.DISCORD_GUILD_ID)}/events`);
@@ -24,6 +30,6 @@ function normaliseRole(signup) { return roleMap[String(signup.cClassName || sign
 async function getRosterEvent(eventId) {
   const event = await request(`/events/${encodeURIComponent(eventId)}`);
   if (!isMatch(event)) throw new Error('This event is not an eligible match.');
-  return { ...formatEvent(event), players: (event.signUps || event.signups || []).map((signup) => ({ id: String(signup.userId || signup.id), name: signup.name || 'Unknown player', role: normaliseRole(signup) })).filter((player) => player.role) };
+  return { ...formatEvent(event), players: (event.signUps || event.signups || []).filter(isRosterEligible).map((signup) => ({ id: String(signup.userId || signup.id), name: signup.name || 'Unknown player', role: normaliseRole(signup) })).filter((player) => player.role) };
 }
 module.exports = { getRosterEvents, getRosterEvent };

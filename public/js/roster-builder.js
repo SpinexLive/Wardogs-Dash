@@ -46,7 +46,7 @@
   function renderSquads() { document.getElementById('squad-list').innerHTML = state.squads.map(squadCard).join('') || '<p class="empty-state">Choose a template to add your first squad.</p>'; }
   function renderCounter() {
     const slots = totalSlots(); const count = assigned(); const invalid = slots > 33 || count > 33;
-    document.getElementById('slot-counter').textContent = `${count} / 33`;
+    document.getElementById('slot-counter').textContent = `${count} / ${slots}`;
     document.getElementById('slot-remaining').textContent = `${Math.max(0, 33 - slots)} squad slot${33 - slots === 1 ? '' : 's'} available`;
     const warning = document.getElementById('slot-warning'); warning.hidden = !invalid; warning.textContent = invalid ? 'This roster exceeds the 33-player limit. Reduce squad slots before saving.' : '';
     document.getElementById('save-roster').disabled = invalid;
