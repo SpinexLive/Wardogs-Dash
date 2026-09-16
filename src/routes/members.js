@@ -4,6 +4,7 @@ const store = require('../lib/store');
 const steamStore = require('../lib/steamStore');
 const rcon = require('../lib/rcon');
 const rosterDb = require('../lib/rosterDb');
+const warcon = require('../lib/warcon');
 const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
@@ -36,7 +37,17 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
     const members = await loadMembers(access.memberRoleIds);
     const steamIds = steamStore.readSteamIds();
     const cashTotals = rosterDb.getCashTotals(Object.values(steamIds));
-    const matchStats = rosterDb.getMatchStats(Object.values(steamIds));
+    let performance = new Map();
+    let performanceError = null;
+    if (warcon.isConfigured()) {
+      try {
+        performance = await warcon.getPlayerSummaries(Object.values(steamIds));
+      } catch (_) {
+        performanceError = 'Warcon player performance data is temporarily unavailable.';
+      }
+    } else {
+      performanceError = 'Warcon performance data is unavailable until its API key and server ID are configured.';
+    }
 
     let vipError = null;
     let reservedSlots = new Set();
@@ -54,16 +65,18 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
     const membersWithVip = members.map((member) => {
       const steamId = steamIds[member.id] || null;
       const livePlayer = steamId ? connectedPlayers.get(String(steamId)) : null;
-      const stats = steamId ? matchStats.get(String(steamId)) : null;
+      const stats = steamId ? performance.get(String(steamId)) : null;
       return {
         ...member,
         steamId,
         vip: Boolean(steamId && reservedSlots.has(steamId)),
         online: Boolean(livePlayer),
-        allTimeKills: stats?.totalKills || 0,
-        averageKills: stats?.avgKills === null || !stats ? null : stats.avgKills.toFixed(2),
-        averageDeaths: stats?.avgDeaths === null || !stats ? null : stats.avgDeaths.toFixed(2),
-        averageKd: stats?.avgKd === null || !stats ? null : stats.avgKd.toFixed(2),
+        kills: stats?.kills ?? null,
+        deaths: stats?.deaths ?? null,
+        sessions: stats?.sessions ?? null,
+        minutes: stats?.minutes ?? null,
+        kd: stats ? stats.kd.toFixed(2) : null,
+        kpm: stats ? stats.kpm.toFixed(2) : null,
         cashEarned: steamId ? (cashTotals.get(String(steamId)) || 0) : null,
         isRecruit: Boolean(access.recruitRankRoleId && member.roles.includes(access.recruitRankRoleId)),
         isMemberRank: Boolean(access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)),
@@ -81,6 +94,7 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
       hasMemberRoles: access.memberRoleIds.length > 0,
       vipConfigured: rcon.isConfigured(),
       vipError,
+      performanceError,
     });
   } catch (err) {
     next(err);

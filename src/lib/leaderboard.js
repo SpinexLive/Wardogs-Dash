@@ -2,6 +2,7 @@ const discord = require('./discord');
 const store = require('./store');
 const steamStore = require('./steamStore');
 const rosterDb = require('./rosterDb');
+const warcon = require('./warcon');
 
 function displayName(member) {
   return member.nick || member.user.global_name || member.user.username || 'Unknown member';
@@ -24,11 +25,11 @@ async function buildLeaderboardPayload() {
   const linked = clanMembers.map((member) => ({ name: displayName(member), steamId: steamIds[member.user.id] })).filter((member) => member.steamId);
   const ids = linked.map((member) => String(member.steamId));
   const cashTotals = rosterDb.getCashTotals(ids);
-  const matchStats = rosterDb.getMatchStats(ids);
+  const performance = await warcon.getPlayerSummaries(ids);
   const rows = linked.map((member) => ({
     name: member.name,
     cash: cashTotals.get(String(member.steamId)) || 0,
-    kills: matchStats.get(String(member.steamId))?.totalKills || 0,
+    kills: performance.get(String(member.steamId))?.kills || 0,
   }));
 
   return {
@@ -41,7 +42,7 @@ async function buildLeaderboardPayload() {
         { name: '💰 Top 10 Cash Earners', value: rankedLines(rows, 'cash', (value) => `$${value.toLocaleString()}`), inline: true },
         { name: '⚔️ Top 10 Killers', value: rankedLines(rows, 'kills', (value) => `${value.toLocaleString()} kills`), inline: true },
       ],
-      footer: { text: 'Wardogs Dash • Full-match performance tracking' },
+      footer: { text: 'Wardogs Dash • Cash tracked locally • Kills from Warcon' },
       timestamp: new Date().toISOString(),
     }],
   };

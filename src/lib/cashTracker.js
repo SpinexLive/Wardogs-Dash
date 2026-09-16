@@ -11,9 +11,8 @@ async function pollCash() {
   if (polling || !rcon.isConfigured()) return;
   polling = true;
   try {
-    const [players, status] = await Promise.all([rcon.getPlayers(), rcon.getServerStatus()]);
+    const players = await rcon.getPlayers();
     rosterDb.recordCashSnapshot(players);
-    rosterDb.recordMatchSnapshot(status, players);
     await cashCounter.updateCashTotalChannel().catch((err) => console.warn(`[cash-counter] ${err.message}`));
     // The Discord message is only edited after an admin has explicitly sent it once.
     await leaderboard.updateLeaderboard().catch((err) => console.warn(`[leaderboard] ${err.message}`));

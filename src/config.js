@@ -34,4 +34,6 @@ module.exports = {
   RCON_PORT: process.env.RCON_PORT || '7776',
   RCON_PASSWORD: process.env.RCON_PASSWORD || '',
   RAID_HELPER_API_TOKEN: process.env.RAID_HELPER_API_TOKEN || '',
+  WARCON_API_KEY: process.env.WARCON_API_KEY || '',
+  WARCON_SERVER_ID: process.env.WARCON_SERVER_ID || '',
 };
