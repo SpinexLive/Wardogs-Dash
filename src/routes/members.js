@@ -8,6 +8,13 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 const MAX_STEAM_ID_LENGTH = 64;
 
+function discordAvatarUrl(user) {
+  if (user.avatar) return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=64`;
+  // Discord's fallback avatars are deterministic for accounts without a custom image.
+  const index = Number(BigInt(user.id) % 5n);
+  return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+}
+
 async function loadMembers(memberRoleIds) {
   if (!memberRoleIds.length) return [];
   const members = await discord.getGuildMembers();
@@ -16,6 +23,7 @@ async function loadMembers(memberRoleIds) {
     .map((member) => ({
       id: member.user.id,
       nickname: member.nick || member.user.global_name || member.user.username,
+      avatar: discordAvatarUrl(member.user),
       roles: member.roles,
     }))
     .sort((a, b) => a.nickname.localeCompare(b.nickname));
