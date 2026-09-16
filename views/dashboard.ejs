@@ -29,6 +29,7 @@
       <%- include('partials/metric-card', { label: 'Steam linked', value: dashboard.metrics.steamCoverage + '%', detail: dashboard.metrics.steamLinked + ' roster records linked' }) %>
       <%- include('partials/metric-card', { label: 'VIP ready', value: dashboard.metrics.vipEligible, detail: 'Eligible players with Steam IDs' }) %>
       <%- include('partials/metric-card', { label: 'On the server', value: dashboard.metrics.serverPlayers === null ? '—' : dashboard.metrics.serverPlayers + (dashboard.metrics.serverCapacity ? ' / ' + dashboard.metrics.serverCapacity : ''), detail: dashboard.metrics.serverPlayers === null ? 'RCON server unavailable' : 'Live game-server player count' }) %>
+      <%- include('partials/metric-card', { label: 'Cash earned', value: dashboard.metrics.cashEarned.toLocaleString(), detail: 'Tracked gains across all players' }) %>
     </section>
 
     <section class="dashboard-columns">

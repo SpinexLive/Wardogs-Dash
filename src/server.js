@@ -7,6 +7,7 @@ const path = require('path');
 const config = require('./config');
 const store = require('./lib/store');
 const steamStore = require('./lib/steamStore');
+const { startCashTracking } = require('./lib/cashTracker');
 const { getAccessFlags } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
@@ -19,6 +20,7 @@ const SESSIONS_DIR = path.join(__dirname, '..', 'data', 'sessions');
 store.ensureStore(config.ADMIN_ROLE_IDS);
 steamStore.ensureStore();
 fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+startCashTracking();
 
 const app = express();
 app.set('view engine', 'ejs');

@@ -3,6 +3,7 @@ const discord = require('../lib/discord');
 const store = require('../lib/store');
 const steamStore = require('../lib/steamStore');
 const rcon = require('../lib/rcon');
+const rosterDb = require('../lib/rosterDb');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -34,6 +35,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
     const access = store.readAccess();
     const members = await loadMembers(access.memberRoleIds);
     const steamIds = steamStore.readSteamIds();
+    const cashTotals = rosterDb.getCashTotals(Object.values(steamIds));
 
     let vipError = null;
     let reservedSlots = new Set();
@@ -59,6 +61,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
         kills: livePlayer?.kills ?? null,
         deaths: livePlayer?.deaths ?? null,
         kd: livePlayer ? (Number(livePlayer.deaths) ? (Number(livePlayer.kills) / Number(livePlayer.deaths)).toFixed(2) : Number(livePlayer.kills).toFixed(2)) : null,
+        cashEarned: steamId ? (cashTotals.get(String(steamId)) || 0) : null,
         isRecruit: Boolean(access.recruitRankRoleId && member.roles.includes(access.recruitRankRoleId)),
         isMemberRank: Boolean(access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)),
       };

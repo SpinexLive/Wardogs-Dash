@@ -4,6 +4,7 @@ const discord = require('./discord');
 const store = require('./store');
 const steamStore = require('./steamStore');
 const rcon = require('./rcon');
+const rosterDb = require('./rosterDb');
 
 const OPERATIONS_FILE = path.join(__dirname, '..', '..', 'data', 'operations.json');
 
@@ -66,6 +67,7 @@ async function getDashboardMetrics() {
       matchesPlayed: matches.length,
       serverPlayers,
       serverCapacity,
+      cashEarned: rosterDb.getCommunityCashTotal(),
     },
     attendance: attendance.slice(0, 4),
     matches: matches.slice(0, 5),

@@ -7,6 +7,10 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS rosters (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, event_start INTEGER, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
   CREATE TABLE IF NOT EXISTS squads (id INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL REFERENCES rosters(event_id) ON DELETE CASCADE, position INTEGER NOT NULL, name TEXT NOT NULL, template TEXT NOT NULL, leader_slots INTEGER NOT NULL DEFAULT 0, player_slots INTEGER NOT NULL DEFAULT 0, fixed_slots INTEGER NOT NULL DEFAULT 0);
   CREATE TABLE IF NOT EXISTS roster_assignments (id INTEGER PRIMARY KEY AUTOINCREMENT, squad_id INTEGER NOT NULL REFERENCES squads(id) ON DELETE CASCADE, player_id TEXT NOT NULL, player_name TEXT NOT NULL, player_role TEXT NOT NULL, position INTEGER NOT NULL, UNIQUE(squad_id, position), UNIQUE(squad_id, player_id));
+  CREATE TABLE IF NOT EXISTS player_cash_tracking (
+    steam_id TEXT PRIMARY KEY, current_cash REAL NOT NULL DEFAULT 0, earned_cash REAL NOT NULL DEFAULT 0,
+    last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 function getRoster(eventId) {
@@ -29,4 +33,23 @@ const saveRoster = db.transaction((event, squads) => {
   const addPlayer = db.prepare('INSERT INTO roster_assignments (squad_id, player_id, player_name, player_role, position) VALUES (?, ?, ?, ?, ?)');
   squads.forEach((squad, position) => { const result = addSquad.run(event.id, position, squad.name, squad.template, squad.leaderSlots || 0, squad.playerSlots || 0, squad.fixedSlots || 0); (squad.assignments || []).forEach((player, playerPosition) => addPlayer.run(result.lastInsertRowid, player.id, player.name, player.role, playerPosition)); });
 });
-module.exports = { getRoster, hasRoster, saveRoster, deleteRoster };
+const recordCashSnapshot = db.transaction((players) => {
+  const find = db.prepare('SELECT current_cash FROM player_cash_tracking WHERE steam_id = ?');
+  const insert = db.prepare('INSERT INTO player_cash_tracking (steam_id, current_cash, earned_cash, last_seen_at) VALUES (?, ?, 0, CURRENT_TIMESTAMP)');
+  const update = db.prepare('UPDATE player_cash_tracking SET current_cash = ?, earned_cash = earned_cash + ?, last_seen_at = CURRENT_TIMESTAMP WHERE steam_id = ?');
+  players.forEach((player) => {
+    if (!player?.steamId || !Number.isFinite(Number(player.cash))) return;
+    const steamId = String(player.steamId);
+    const cash = Number(player.cash);
+    const existing = find.get(steamId);
+    if (!existing) insert.run(steamId, cash);
+    else update.run(cash, Math.max(0, cash - Number(existing.current_cash)), steamId);
+  });
+});
+function getCommunityCashTotal() { return Number(db.prepare('SELECT COALESCE(SUM(earned_cash), 0) AS total FROM player_cash_tracking').get().total); }
+function getCashTotals(steamIds) {
+  if (!steamIds.length) return new Map();
+  const rows = db.prepare(`SELECT steam_id, earned_cash FROM player_cash_tracking WHERE steam_id IN (${steamIds.map(() => '?').join(',')})`).all(...steamIds.map(String));
+  return new Map(rows.map((row) => [row.steam_id, Number(row.earned_cash)]));
+}
+module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, recordCashSnapshot, getCommunityCashTotal, getCashTotals };

@@ -76,6 +76,10 @@ Saved rosters are stored in `data/wardogs.db` using SQLite. The database is crea
 and contains separate `rosters`, `squads`, and `roster_assignments` tables; the file must remain on
 the persistent `data` volume when deploying.
 
+When RCON is configured, the app polls connected players once per minute and records positive
+changes in their current in-game `cash` balance. This produces an all-player and per-member
+tracked earnings total from the first observation onward; it is not a retroactive server ledger.
+
 ## Operational dashboard data
 
 The dashboard continues to use the existing roster and Steam-ID stores for roster/VIP metrics.
