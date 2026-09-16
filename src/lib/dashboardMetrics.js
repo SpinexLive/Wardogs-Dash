@@ -3,6 +3,7 @@ const path = require('path');
 const discord = require('./discord');
 const store = require('./store');
 const steamStore = require('./steamStore');
+const rcon = require('./rcon');
 
 const OPERATIONS_FILE = path.join(__dirname, '..', '..', 'data', 'operations.json');
 
@@ -41,6 +42,17 @@ async function getDashboardMetrics() {
   const steamLinked = roster.filter((member) => steamIds[member.user.id]).length;
   const attendance = newestFirst(operations.attendance);
   const matches = newestFirst(operations.matches);
+  let serverPlayers = null;
+  let serverCapacity = null;
+  if (rcon.isConfigured()) {
+    try {
+      const status = await rcon.getServerStatus();
+      serverPlayers = Number(status.players?.current ?? 0);
+      serverCapacity = status.players?.max ?? null;
+    } catch (_) {
+      // The dashboard remains usable when the game server is offline or unreachable.
+    }
+  }
 
   return {
     metrics: {
@@ -52,6 +64,8 @@ async function getDashboardMetrics() {
       attendanceRate: calculateAttendance(attendance),
       winRate: calculateWinRate(matches),
       matchesPlayed: matches.length,
+      serverPlayers,
+      serverCapacity,
     },
     attendance: attendance.slice(0, 4),
     matches: matches.slice(0, 5),

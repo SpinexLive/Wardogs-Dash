@@ -37,23 +37,28 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
 
     let vipError = null;
     let reservedSlots = new Set();
+    let connectedPlayers = new Map();
     if (rcon.isConfigured()) {
       try {
-        reservedSlots = new Set(await rcon.getReservedSlots());
+        const [reserved, players] = await Promise.all([rcon.getReservedSlots(), rcon.getPlayers()]);
+        reservedSlots = new Set(reserved);
+        connectedPlayers = new Map(players.map((player) => [String(player.steamId), player]));
       } catch (err) {
-        vipError = 'Could not reach the RCON server to check VIP status.';
+        vipError = 'Could not reach the RCON server to check live player or VIP status.';
       }
     }
 
     const membersWithVip = members.map((member) => {
       const steamId = steamIds[member.id] || null;
+      const livePlayer = steamId ? connectedPlayers.get(String(steamId)) : null;
       return {
         ...member,
         steamId,
         vip: Boolean(steamId && reservedSlots.has(steamId)),
-        kills: null,
-        deaths: null,
-        kd: null,
+        online: Boolean(livePlayer),
+        kills: livePlayer?.kills ?? null,
+        deaths: livePlayer?.deaths ?? null,
+        kd: livePlayer ? (Number(livePlayer.deaths) ? (Number(livePlayer.kills) / Number(livePlayer.deaths)).toFixed(2) : Number(livePlayer.kills).toFixed(2)) : null,
         isRecruit: Boolean(access.recruitRankRoleId && member.roles.includes(access.recruitRankRoleId)),
         isMemberRank: Boolean(access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)),
       };
@@ -65,6 +70,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
       memberStats: {
         linkedSteam: membersWithVip.filter((member) => member.steamId).length,
         vipEnabled: membersWithVip.filter((member) => member.vip).length,
+        online: membersWithVip.filter((member) => member.online).length,
       },
       hasMemberRoles: access.memberRoleIds.length > 0,
       vipConfigured: rcon.isConfigured(),

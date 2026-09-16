@@ -32,6 +32,19 @@ async function getReservedSlots() {
   return data.reservedSlots || [];
 }
 
+async function getServerStatus() {
+  const res = await request('/v1/status');
+  if (!res.ok) throw new Error(`Failed to fetch server status: ${res.status}`);
+  return res.json();
+}
+
+async function getPlayers() {
+  const res = await request('/v1/players');
+  if (!res.ok) throw new Error(`Failed to fetch connected players: ${res.status}`);
+  const data = await res.json();
+  return Array.isArray(data.players) ? data.players : [];
+}
+
 async function getCapabilities() {
   const res = await request('/v1/capabilities');
   if (!res.ok) throw new Error(`Failed to fetch capabilities: ${res.status}`);
@@ -126,5 +139,5 @@ async function setReservedSlots(steamIds) {
   return { count: steamIds.length };
 }
 
-module.exports = { isConfigured, getReservedSlots, setReservedSlots };
+module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, setReservedSlots };
 
