@@ -33,6 +33,5 @@ module.exports = {
   RCON_HOST: process.env.RCON_HOST || '127.0.0.1',
   RCON_PORT: process.env.RCON_PORT || '7776',
   RCON_PASSWORD: process.env.RCON_PASSWORD || '',
-  RAID_HELPER_EVENTS_URL: process.env.RAID_HELPER_EVENTS_URL || '',
   RAID_HELPER_API_TOKEN: process.env.RAID_HELPER_API_TOKEN || '',
 };

@@ -28,11 +28,11 @@ function formatEvent(event) {
 }
 
 async function getRosterEvents() {
-  if (!config.RAID_HELPER_EVENTS_URL || !config.RAID_HELPER_API_TOKEN) {
+  if (!config.RAID_HELPER_API_TOKEN) {
     return { configured: false, events: [] };
   }
 
-  const url = config.RAID_HELPER_EVENTS_URL.replace('{guildId}', config.DISCORD_GUILD_ID);
+  const url = `https://raid-helper.dev/api/v2/servers/${encodeURIComponent(config.DISCORD_GUILD_ID)}/events`;
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${config.RAID_HELPER_API_TOKEN}`,

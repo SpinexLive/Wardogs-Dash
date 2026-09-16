@@ -6,7 +6,7 @@
     <header class="dashboard-header"><div><p class="eyebrow">Raid-Helper</p><h1>Roster events</h1><p class="muted">Only operations marked with ⚔️ are shown here.</p></div><span class="status-pill <%= roster.configured ? '' : 'status-pill--muted' %>"><%= roster.configured ? roster.events.length + ' eligible' : 'Setup required' %></span></header>
     <% if (error) { %><p class="error-banner"><%= error %></p><% } %>
     <% if (!roster.configured) { %>
-      <section class="dashboard-panel empty-panel"><h2>Connect Raid-Helper</h2><p class="muted">Set <code>RAID_HELPER_EVENTS_URL</code> and <code>RAID_HELPER_API_TOKEN</code> in your environment, then reload. The endpoint can contain <code>{guildId}</code>, which is replaced with this Discord server’s ID.</p></section>
+      <section class="dashboard-panel empty-panel"><h2>Connect Raid-Helper</h2><p class="muted">Set <code>RAID_HELPER_API_TOKEN</code> in your environment, then reload. The dashboard uses this server’s existing Discord guild ID automatically.</p></section>
     <% } else if (!roster.events.length) { %>
       <section class="dashboard-panel empty-panel"><h2>No eligible events</h2><p class="muted">There are no events beginning with ⚔️ in the API response.</p></section>
     <% } else { %>
