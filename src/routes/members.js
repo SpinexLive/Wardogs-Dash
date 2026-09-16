@@ -51,6 +51,10 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
     res.render('members', {
       active: 'members',
       members: membersWithVip,
+      memberStats: {
+        linkedSteam: membersWithVip.filter((member) => member.steamId).length,
+        vipEnabled: membersWithVip.filter((member) => member.vip).length,
+      },
       hasMemberRoles: access.memberRoleIds.length > 0,
       vipConfigured: rcon.isConfigured(),
       vipError,

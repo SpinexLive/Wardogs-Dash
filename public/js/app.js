@@ -23,7 +23,7 @@ document.querySelectorAll('[data-close-dialog]').forEach((btn) => {
 // Filters the Members table rows as you type.
 const memberSearch = document.getElementById('member-search');
 if (memberSearch) {
-  const rows = [...document.querySelectorAll('#member-rows tr')];
+  const rows = [...document.querySelectorAll('#member-rows .member-card, #member-rows tr')];
   const emptyMessage = document.getElementById('member-search-empty');
 
   memberSearch.addEventListener('input', () => {

@@ -6,22 +6,24 @@
 <body>
   <%- include('partials/nav') %>
 
-  <main class="page">
-    <div class="page-header">
+  <main class="page settings-page">
+    <header class="dashboard-header">
       <div>
+        <p class="eyebrow">Administration</p>
         <h1>Settings</h1>
-        <p class="muted">Grant dashboard or admin access to your server's Discord roles.</p>
+        <p class="muted">Control access, roster membership, and rank assignments.</p>
       </div>
-    </div>
+      <a href="/members" class="action-button">View roster</a>
+    </header>
 
-    <section class="panel">
+    <section class="dashboard-panel settings-panel">
       <% if (error) { %>
         <p class="error-banner"><%= error %></p>
       <% } %>
       <form method="POST" action="/settings/roles">
-        <div class="select-groups">
-          <div class="select-group">
-            <label>Dashboard Access Roles</label>
+        <div class="settings-card-grid">
+          <div class="select-group settings-card">
+            <p class="eyebrow">Visibility</p><label>Dashboard Access Roles</label>
             <p class="fine-print">Members with any of these roles can view the dashboard.</p>
             <details class="role-dropdown">
               <summary>
@@ -45,8 +47,8 @@
             </details>
           </div>
 
-          <div class="select-group">
-            <label>Admin Access Roles</label>
+          <div class="select-group settings-card">
+            <p class="eyebrow">Control</p><label>Admin Access Roles</label>
             <p class="fine-print">Members with any of these roles can access Settings too.</p>
             <details class="role-dropdown">
               <summary>
@@ -70,8 +72,8 @@
             </details>
           </div>
 
-          <div class="select-group">
-            <label>Member Roles</label>
+          <div class="select-group settings-card">
+            <p class="eyebrow">Roster</p><label>Member Roles</label>
             <p class="fine-print">Roles that count as a "member" for the Members table below.</p>
             <details class="role-dropdown">
               <summary>
@@ -98,9 +100,9 @@
 
         <p class="fine-print">Admin access always includes dashboard access. Changes apply immediately, no re-login needed.</p>
 
-        <div class="select-groups">
-          <div class="select-group">
-            <label for="recruitRankRoleId">Recruit Role</label>
+        <div class="settings-card-grid settings-card-grid--two">
+          <div class="select-group settings-card">
+            <p class="eyebrow">Rank</p><label for="recruitRankRoleId">Recruit Role</label>
             <p class="fine-print">Shown as a "Recruit" badge under a member's name on the Members table.</p>
             <select id="recruitRankRoleId" name="recruitRankRoleId" class="role-select">
               <option value="">None</option>
@@ -112,8 +114,8 @@
             </select>
           </div>
 
-          <div class="select-group">
-            <label for="memberRankRoleId">Member Role</label>
+          <div class="select-group settings-card">
+            <p class="eyebrow">Rank</p><label for="memberRankRoleId">Member Role</label>
             <p class="fine-print">Shown as a "Member" badge under a member's name on the Members table.</p>
             <select id="memberRankRoleId" name="memberRankRoleId" class="role-select">
               <option value="">None</option>
@@ -133,8 +135,8 @@
       </form>
     </section>
 
-    <section class="panel">
-      <h2>Members</h2>
+    <section class="dashboard-panel settings-hint">
+      <p class="eyebrow">Next step</p><h2>Members</h2>
       <p class="muted">
         Manage the member roster, Steam IDs, and stats on the
         <a href="/members" class="inline-link">Members page</a>.

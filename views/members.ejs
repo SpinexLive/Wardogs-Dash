@@ -1,108 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <%- include('partials/head', { title: 'Members - Wardogs Dash' }) %>
-</head>
-<body class="fixed-viewport">
+<html lang="en"><head><%- include('partials/head', { title: 'Members - Wardogs Dash' }) %></head>
+<body>
   <%- include('partials/nav') %>
-
-  <main class="page page--fill">
-    <div class="page-header">
-      <div>
-        <h1>Members</h1>
-        <p class="muted">Anyone holding a Member Role. Click a Steam ID to add or edit it.</p>
-      </div>
-    </div>
-
-    <section class="panel panel--fill">
-      <% if (vipError) { %>
-        <p class="error-banner"><%= vipError %></p>
-      <% } else if (!vipConfigured) { %>
-        <p class="fine-print">VIP lookup isn't configured yet — set RCON_HOST/RCON_PORT/RCON_PASSWORD in .env to enable it.</p>
-      <% } %>
-
-      <% if (!hasMemberRoles) { %>
-        <p class="fine-print">
-          No Member Roles are configured yet. Pick some under
-          <a href="/settings" class="inline-link">Settings</a> to populate this list.
-        </p>
-      <% } else if (!members.length) { %>
-        <p class="fine-print">No server members currently hold a Member Role.</p>
-      <% } else { %>
-        <input
-          type="search"
-          id="member-search"
-          class="member-search"
-          placeholder="Search members..."
-          autocomplete="off"
-        />
-
-        <div class="table-scroll">
-          <table class="roles-table">
-            <thead>
-              <tr>
-                <th>Discord Nickname</th>
-                <th>Steam ID</th>
-                <th>Kills</th>
-                <th>Deaths</th>
-                <th>K/D</th>
-                <th>VIP</th>
-              </tr>
-            </thead>
-            <tbody id="member-rows">
-              <% members.forEach((member) => { %>
-                <tr>
-                  <td>
-                    <%= member.nickname %>
-                    <% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %>
-                    <% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %>
-                  </td>
-                  <td>
-                    <button type="button" class="steam-id-btn" data-dialog="steam-dialog-<%= member.id %>">
-                      <%= member.steamId || 'Not set' %>
-                    </button>
-                  </td>
-                  <td class="muted">—</td>
-                  <td class="muted">—</td>
-                  <td class="muted">—</td>
-                  <td>
-                    <% if (member.vip) { %>
-                      <span class="vip-badge">VIP</span>
-                    <% } else { %>
-                      <span class="muted">—</span>
-                    <% } %>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-
-        <p id="member-search-empty" class="fine-print" hidden>No members match your search.</p>
-
-        <% members.forEach((member) => { %>
-          <dialog id="steam-dialog-<%= member.id %>" class="steam-dialog">
-            <form method="POST" action="/members/steam-id">
-              <input type="hidden" name="userId" value="<%= member.id %>" />
-              <label for="steamId-<%= member.id %>">Steam ID for <%= member.nickname %></label>
-              <input
-                type="text"
-                id="steamId-<%= member.id %>"
-                name="steamId"
-                value="<%= member.steamId || '' %>"
-                placeholder="e.g. 76561198000000000"
-                autocomplete="off"
-              />
-              <div class="dialog-actions">
-                <button type="button" class="btn-secondary" data-close-dialog>Cancel</button>
-                <button type="submit" class="btn-primary">Save</button>
-              </div>
-            </form>
-          </dialog>
-        <% }) %>
-      <% } %>
+  <main class="page members-page">
+    <header class="dashboard-header"><div><p class="eyebrow">Personnel</p><h1>Member roster</h1><p class="muted">Manage roster identity, ranks, Steam links, and VIP access.</p></div><a href="/settings" class="action-button">Configure roles</a></header>
+    <% if (vipError) { %><p class="error-banner"><%= vipError %></p><% } else if (!vipConfigured) { %><p class="notice-banner">VIP server lookup is unavailable until RCON is configured.</p><% } %>
+    <section class="metric-grid member-metric-grid">
+      <%- include('partials/metric-card', { label: 'Roster members', value: members.length, detail: 'Across configured roles' }) %>
+      <%- include('partials/metric-card', { label: 'Steam linked', value: memberStats.linkedSteam, detail: 'Ready for game services' }) %>
+      <%- include('partials/metric-card', { label: 'VIP active', value: memberStats.vipEnabled, detail: 'Reserved slots confirmed' }) %>
     </section>
+    <% if (!hasMemberRoles) { %>
+      <section class="dashboard-panel empty-panel"><h2>Roster roles not configured</h2><p class="muted">Choose one or more Member Roles in Settings to populate this roster.</p><a href="/settings" class="action-button action-button--primary">Open settings</a></section>
+    <% } else if (!members.length) { %>
+      <section class="dashboard-panel empty-panel"><h2>No members found</h2><p class="muted">No current Discord members have a configured roster role.</p></section>
+    <% } else { %>
+      <section class="dashboard-panel member-directory"><div class="directory-toolbar"><div><p class="eyebrow">Directory</p><h2>All roster members</h2></div><input type="search" id="member-search" class="member-search" placeholder="Search roster..." autocomplete="off" /></div>
+        <div class="member-grid" id="member-rows"><% members.forEach((member) => { %><article class="member-card"><div class="member-card__head"><div><h3><%= member.nickname %></h3><div class="rank-stack"><% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %><% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %></div></div><span class="status-indicator <%= member.vip ? 'status-indicator--active' : '' %>"><%= member.vip ? 'VIP' : 'Standard' %></span></div><div class="member-card__body"><span>Steam identity</span><button type="button" class="steam-id-btn" data-dialog="steam-dialog-<%= member.id %>"><%= member.steamId || 'Link Steam ID' %></button></div></article><% }) %></div>
+        <p id="member-search-empty" class="empty-state" hidden>No members match your search.</p>
+      </section>
+      <% members.forEach((member) => { %><dialog id="steam-dialog-<%= member.id %>" class="steam-dialog"><form method="POST" action="/members/steam-id"><input type="hidden" name="userId" value="<%= member.id %>" /><label for="steamId-<%= member.id %>">Steam ID for <%= member.nickname %></label><input type="text" id="steamId-<%= member.id %>" name="steamId" value="<%= member.steamId || '' %>" placeholder="e.g. 76561198000000000" autocomplete="off" /><div class="dialog-actions"><button type="button" class="btn-secondary" data-close-dialog>Cancel</button><button type="submit" class="btn-primary">Save</button></div></form></dialog><% }) %>
+    <% } %>
   </main>
   <script src="/js/app.js"></script>
-</body>
-</html>
+</body></html>

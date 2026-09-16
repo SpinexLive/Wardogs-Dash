@@ -65,6 +65,14 @@ data/operations.json  optional attendance, match, and roster-change records
 data/sessions/        session store files (gitignored, created on first run)
 ```
 
+## Raid-Helper roster events
+
+The `/roster` page fetches events server-side from the configured Raid-Helper event-list endpoint.
+Set `RAID_HELPER_EVENTS_URL` and `RAID_HELPER_API_TOKEN` in `.env`; the URL may include
+`{guildId}`, which is substituted with `DISCORD_GUILD_ID`. The token is never exposed to the
+browser. The adapter accepts top-level arrays as well as `events` or `data` response arrays and
+only renders events whose `name` (or `title`) starts exactly with `⚔️`.
+
 ## Operational dashboard data
 
 The dashboard continues to use the existing roster and Steam-ID stores for roster/VIP metrics.

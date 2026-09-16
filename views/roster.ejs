@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en"><head><%- include('partials/head', { title: 'Roster - Wardogs Dash' }) %></head>
+<body>
+  <%- include('partials/nav') %>
+  <main class="page roster-page">
+    <header class="dashboard-header"><div><p class="eyebrow">Raid-Helper</p><h1>Roster events</h1><p class="muted">Only operations marked with ⚔️ are shown here.</p></div><span class="status-pill <%= roster.configured ? '' : 'status-pill--muted' %>"><%= roster.configured ? roster.events.length + ' eligible' : 'Setup required' %></span></header>
+    <% if (error) { %><p class="error-banner"><%= error %></p><% } %>
+    <% if (!roster.configured) { %>
+      <section class="dashboard-panel empty-panel"><h2>Connect Raid-Helper</h2><p class="muted">Set <code>RAID_HELPER_EVENTS_URL</code> and <code>RAID_HELPER_API_TOKEN</code> in your environment, then reload. The endpoint can contain <code>{guildId}</code>, which is replaced with this Discord server’s ID.</p></section>
+    <% } else if (!roster.events.length) { %>
+      <section class="dashboard-panel empty-panel"><h2>No eligible events</h2><p class="muted">There are no events beginning with ⚔️ in the API response.</p></section>
+    <% } else { %>
+      <section class="roster-event-grid"><% roster.events.forEach((event) => { %><article class="roster-event-card"><p class="eyebrow">Scheduled operation</p><h2><%= event.name %></h2><p class="event-date"><%= event.start || 'Start time pending' %></p><p class="event-description"><%= event.description || 'No event description supplied.' %></p><footer><span><strong><%= event.signups %></strong><%= event.capacity ? ' / ' + event.capacity : '' %> signed up</span><span class="status-pill">Roster soon</span></footer></article><% }) %></section>
+    <% } %>
+  </main>
+</body></html>

@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
 const membersRoutes = require('./routes/members');
 const settingsRoutes = require('./routes/settings');
+const rosterRoutes = require('./routes/roster');
 
 const SESSIONS_DIR = path.join(__dirname, '..', 'data', 'sessions');
 
@@ -70,6 +71,7 @@ app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/members', membersRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/roster', rosterRoutes);
 
 app.use((req, res) => {
   res.status(404).render('error', { message: 'Page not found.' });
