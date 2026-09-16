@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><%- include('partials/head', { title: 'Members - Wardogs Dash' }) %></head><body>
+<!DOCTYPE html><html lang="en"><head><%- include('partials/head', { title: 'Members - Wardogs Dash' }) %></head><body class="members-body">
   <%- include('partials/nav') %><main class="page members-page">
     <header class="dashboard-header"><div><p class="eyebrow">Personnel command</p><h1>Member roster</h1><p class="muted">Live Discord membership, Steam identity, rank, and reserved-slot status.</p></div><a href="/settings" class="action-button">Configure roles</a></header>
     <% if (vipError) { %><p class="error-banner"><%= vipError %></p><% } else if (!vipConfigured) { %><p class="notice-banner">VIP server lookup is unavailable until RCON is configured.</p><% } %>
