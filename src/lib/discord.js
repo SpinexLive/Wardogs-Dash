@@ -123,8 +123,21 @@ async function renameChannel(channelId, name) {
     headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
-  if (!res.ok) throw new Error(`Failed to rename cash-total channel: ${res.status} ${await res.text()}`);
-  return res.json();
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const error = new Error(`Failed to rename cash-total channel: ${res.status} ${body.message || ''}`.trim());
+    if (res.status === 429) {
+      error.retryAfterMs = Math.ceil(Number(body.retry_after || res.headers.get('retry-after') || 60) * 1000);
+    }
+    throw error;
+  }
+  return {
+    channel: await res.json(),
+    rateLimit: {
+      remaining: Number(res.headers.get('x-ratelimit-remaining')),
+      resetAfterMs: Math.ceil(Number(res.headers.get('x-ratelimit-reset-after')) * 1000),
+    },
+  };
 }
 
 module.exports = {

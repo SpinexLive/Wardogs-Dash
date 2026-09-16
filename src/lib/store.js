@@ -16,6 +16,8 @@ function ensureStore(defaultAdminRoleIds) {
     leaderboardChannelId: null,
     leaderboardMessageId: null,
     cashTotalChannelId: null,
+    cashTotalLastName: null,
+    cashTotalNextUpdateAt: null,
   });
 }
 
@@ -32,6 +34,8 @@ function readAccess() {
     leaderboardChannelId: null,
     leaderboardMessageId: null,
     cashTotalChannelId: null,
+    cashTotalLastName: null,
+    cashTotalNextUpdateAt: null,
     ...data,
   };
 }

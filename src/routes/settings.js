@@ -57,6 +57,9 @@ router.post('/roles', requireAuth, requireAdmin, async (req, res, next) => {
       ...currentAccess, adminRoleIds, allowedRoleIds, memberRoleIds, recruitRankRoleId, memberRankRoleId,
       leaderboardChannelId,
       cashTotalChannelId,
+      // Changing the channel requires the current total to be applied there once.
+      cashTotalLastName: currentAccess.cashTotalChannelId === cashTotalChannelId ? currentAccess.cashTotalLastName : null,
+      cashTotalNextUpdateAt: currentAccess.cashTotalChannelId === cashTotalChannelId ? currentAccess.cashTotalNextUpdateAt : null,
       // A message in a different channel cannot be edited; require one manual Send there.
       leaderboardMessageId: currentAccess.leaderboardChannelId === leaderboardChannelId ? currentAccess.leaderboardMessageId : null,
     });

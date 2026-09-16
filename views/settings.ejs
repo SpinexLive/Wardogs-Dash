@@ -138,7 +138,7 @@
           </div>
           <div class="select-group settings-card">
             <p class="eyebrow">Discord</p><label for="cashTotalChannelId">Live Cash Counter Channel</label>
-            <p class="fine-print">The bot renames this text channel after each server poll, for example: ┊💵┊＄3‚332‚878.</p>
+            <p class="fine-print">The bot renames this text channel with the live total, for example: ┊💵┊＄3‚332‚878. Discord limits channel renames, so it refreshes at the next permitted interval (up to every five minutes).</p>
             <select id="cashTotalChannelId" name="cashTotalChannelId" class="role-select">
               <option value="">No channel selected</option>
               <% channels.forEach((channel) => { %>
