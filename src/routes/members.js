@@ -43,6 +43,9 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
         ...member,
         steamId,
         vip: Boolean(steamId && reservedSlots.has(steamId)),
+        kills: null,
+        deaths: null,
+        kd: null,
         isRecruit: Boolean(access.recruitRankRoleId && member.roles.includes(access.recruitRankRoleId)),
         isMemberRank: Boolean(access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)),
       };
