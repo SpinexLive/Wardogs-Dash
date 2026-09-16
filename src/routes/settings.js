@@ -1,6 +1,7 @@
 const express = require('express');
 const discord = require('../lib/discord');
 const store = require('../lib/store');
+const leaderboard = require('../lib/leaderboard');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -12,9 +13,11 @@ async function loadSortedRoles() {
 
 async function renderSettings(req, res, overrides = {}) {
   const { status, ...viewOverrides } = overrides;
+  const [roles, channels] = await Promise.all([loadSortedRoles(), discord.getGuildTextChannels()]);
   res.status(status || 200).render('settings', {
     active: 'settings',
-    roles: await loadSortedRoles(),
+    roles,
+    channels,
     access: store.readAccess(),
     saved: false,
     error: null,
@@ -24,7 +27,7 @@ async function renderSettings(req, res, overrides = {}) {
 
 router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    await renderSettings(req, res, { saved: req.query.saved === '1' });
+    await renderSettings(req, res, { saved: req.query.saved === '1', leaderboardSent: req.query.leaderboardSent === '1' });
   } catch (err) {
     next(err);
   }
@@ -47,10 +50,28 @@ router.post('/roles', requireAuth, requireAdmin, async (req, res, next) => {
       });
     }
 
-    store.writeAccess({ adminRoleIds, allowedRoleIds, memberRoleIds, recruitRankRoleId, memberRankRoleId });
+    const currentAccess = store.readAccess();
+    const leaderboardChannelId = req.body.leaderboardChannelId || null;
+    store.writeAccess({
+      ...currentAccess, adminRoleIds, allowedRoleIds, memberRoleIds, recruitRankRoleId, memberRankRoleId,
+      leaderboardChannelId,
+      // A message in a different channel cannot be edited; require one manual Send there.
+      leaderboardMessageId: currentAccess.leaderboardChannelId === leaderboardChannelId ? currentAccess.leaderboardMessageId : null,
+    });
     res.redirect('/settings?saved=1');
   } catch (err) {
     next(err);
+  }
+});
+
+router.post('/leaderboard/send', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    await leaderboard.sendLeaderboard();
+    res.redirect('/settings?leaderboardSent=1');
+  } catch (err) {
+    try {
+      await renderSettings(req, res, { status: 400, error: err.message });
+    } catch (renderError) { next(renderError); }
   }
 });
 

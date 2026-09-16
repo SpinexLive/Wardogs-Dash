@@ -1,5 +1,6 @@
 const rcon = require('./rcon');
 const rosterDb = require('./rosterDb');
+const leaderboard = require('./leaderboard');
 
 const POLL_INTERVAL_MS = 60 * 1000;
 let polling = false;
@@ -9,7 +10,11 @@ async function pollCash() {
   if (polling || !rcon.isConfigured()) return;
   polling = true;
   try {
-    rosterDb.recordCashSnapshot(await rcon.getPlayers());
+    const [players, status] = await Promise.all([rcon.getPlayers(), rcon.getServerStatus()]);
+    rosterDb.recordCashSnapshot(players);
+    rosterDb.recordMatchSnapshot(status, players);
+    // The Discord message is only edited after an admin has explicitly sent it once.
+    await leaderboard.updateLeaderboard().catch((err) => console.warn(`[leaderboard] ${err.message}`));
   } catch (err) {
     // Server availability is transient; the next scheduled poll will retry.
     console.warn(`[cash-tracker] ${err.message}`);

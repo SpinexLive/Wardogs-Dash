@@ -126,13 +126,31 @@
               <% }) %>
             </select>
           </div>
+          <div class="select-group settings-card">
+            <p class="eyebrow">Discord</p><label for="leaderboardChannelId">Leaderboard Channel</label>
+            <p class="fine-print">Choose where the bot keeps one live, editable leaderboard embed.</p>
+            <select id="leaderboardChannelId" name="leaderboardChannelId" class="role-select">
+              <option value="">No channel selected</option>
+              <% channels.forEach((channel) => { %>
+                <option value="<%= channel.id %>" <%= access.leaderboardChannelId === channel.id ? 'selected' : '' %>># <%= channel.name %></option>
+              <% }) %>
+            </select>
+          </div>
         </div>
 
         <div class="settings-actions">
           <button type="submit" class="btn-primary">Save Changes</button>
           <% if (saved) { %><span class="save-confirm">Saved!</span><% } %>
+          <% if (typeof leaderboardSent !== 'undefined' && leaderboardSent) { %><span class="save-confirm">Leaderboard sent!</span><% } %>
         </div>
       </form>
+
+      <div class="settings-actions" style="margin-top: 1rem">
+        <form method="POST" action="/settings/leaderboard/send">
+          <button type="submit" class="action-button">Send / refresh leaderboard</button>
+        </form>
+        <p class="fine-print">Save the selected channel first. Once sent, this same embed updates automatically after every 60-second server poll.</p>
+      </div>
     </section>
 
     <section class="dashboard-panel settings-hint">

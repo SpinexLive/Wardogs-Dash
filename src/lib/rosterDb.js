@@ -11,6 +11,27 @@ db.exec(`
     steam_id TEXT PRIMARY KEY, current_cash REAL NOT NULL DEFAULT 0, earned_cash REAL NOT NULL DEFAULT 0,
     last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+  CREATE TABLE IF NOT EXISTS match_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_map TEXT,
+    experiences TEXT,
+    started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at TEXT,
+    last_match_seconds INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS match_player_stats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id INTEGER NOT NULL REFERENCES match_sessions(id) ON DELETE CASCADE,
+    steam_id TEXT NOT NULL,
+    total_kills INTEGER NOT NULL DEFAULT 0,
+    total_deaths INTEGER NOT NULL DEFAULT 0,
+    last_kills INTEGER NOT NULL DEFAULT 0,
+    last_deaths INTEGER NOT NULL DEFAULT 0,
+    first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(session_id, steam_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_match_player_stats_steam_id ON match_player_stats(steam_id);
 `);
 
 function getRoster(eventId) {
@@ -52,4 +73,63 @@ function getCashTotals(steamIds) {
   const rows = db.prepare(`SELECT steam_id, earned_cash FROM player_cash_tracking WHERE steam_id IN (${steamIds.map(() => '?').join(',')})`).all(...steamIds.map(String));
   return new Map(rows.map((row) => [row.steam_id, Number(row.earned_cash)]));
 }
-module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, recordCashSnapshot, getCommunityCashTotal, getCashTotals };
+
+// A session is a complete server match. A new session begins when the map/experience
+// changes or the server's match clock resets. The first observation is a baseline so
+// existing mid-match scoreboard values are never counted twice.
+const recordMatchSnapshot = db.transaction((status, players) => {
+  const rawMap = status?.map || status?.mapName || null;
+  const map = typeof rawMap === 'string' || rawMap === null ? rawMap : JSON.stringify(rawMap);
+  const experiences = JSON.stringify(status?.experiences || []);
+  const matchSeconds = Math.max(0, Number(status?.matchSeconds) || 0);
+  let session = db.prepare('SELECT * FROM match_sessions WHERE ended_at IS NULL ORDER BY id DESC LIMIT 1').get();
+  const isNewMatch = session && (
+    session.server_map !== map ||
+    session.experiences !== experiences ||
+    matchSeconds < Number(session.last_match_seconds)
+  );
+
+  if (isNewMatch) {
+    db.prepare("UPDATE match_sessions SET ended_at = CURRENT_TIMESTAMP WHERE id = ?").run(session.id);
+    session = null;
+  }
+  if (!session) {
+    const result = db.prepare('INSERT INTO match_sessions (server_map, experiences, last_match_seconds) VALUES (?, ?, ?)').run(map, experiences, matchSeconds);
+    session = { id: result.lastInsertRowid };
+  } else {
+    db.prepare('UPDATE match_sessions SET server_map = ?, experiences = ?, last_match_seconds = ? WHERE id = ?').run(map, experiences, matchSeconds, session.id);
+  }
+
+  const find = db.prepare('SELECT * FROM match_player_stats WHERE session_id = ? AND steam_id = ?');
+  const insert = db.prepare('INSERT INTO match_player_stats (session_id, steam_id, last_kills, last_deaths) VALUES (?, ?, ?, ?)');
+  const update = db.prepare('UPDATE match_player_stats SET total_kills = total_kills + ?, total_deaths = total_deaths + ?, last_kills = ?, last_deaths = ?, last_seen_at = CURRENT_TIMESTAMP WHERE id = ?');
+  (players || []).forEach((player) => {
+    if (!player?.steamId) return;
+    const kills = Math.max(0, Number(player.kills) || 0);
+    const deaths = Math.max(0, Number(player.deaths) || 0);
+    const existing = find.get(session.id, String(player.steamId));
+    if (!existing) insert.run(session.id, String(player.steamId), kills, deaths);
+    else update.run(Math.max(0, kills - existing.last_kills), Math.max(0, deaths - existing.last_deaths), kills, deaths, existing.id);
+  });
+});
+
+function getMatchStats(steamIds) {
+  if (!steamIds.length) return new Map();
+  const placeholders = steamIds.map(() => '?').join(',');
+  const rows = db.prepare(`
+    SELECT stats.steam_id, SUM(stats.total_kills) AS total_kills,
+      COUNT(CASE WHEN sessions.ended_at IS NOT NULL THEN 1 END) AS sessions,
+      AVG(CASE WHEN sessions.ended_at IS NOT NULL THEN stats.total_kills END) AS avg_kills,
+      AVG(CASE WHEN sessions.ended_at IS NOT NULL THEN stats.total_deaths END) AS avg_deaths,
+      AVG(CASE WHEN sessions.ended_at IS NOT NULL THEN CASE WHEN stats.total_deaths = 0 THEN stats.total_kills ELSE CAST(stats.total_kills AS REAL) / stats.total_deaths END END) AS avg_kd
+    FROM match_player_stats AS stats
+    INNER JOIN match_sessions AS sessions ON sessions.id = stats.session_id
+    WHERE stats.steam_id IN (${placeholders}) GROUP BY stats.steam_id
+  `).all(...steamIds.map(String));
+  return new Map(rows.map((row) => [row.steam_id, {
+    totalKills: Number(row.total_kills), sessions: Number(row.sessions), avgKills: row.avg_kills === null ? null : Number(row.avg_kills),
+    avgDeaths: row.avg_deaths === null ? null : Number(row.avg_deaths), avgKd: row.avg_kd === null ? null : Number(row.avg_kd),
+  }]));
+}
+
+module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };

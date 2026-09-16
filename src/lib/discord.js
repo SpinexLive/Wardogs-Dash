@@ -1,4 +1,6 @@
 const config = require('../config');
+const fs = require('fs');
+const path = require('path');
 
 const API_BASE = 'https://discord.com/api/v10';
 
@@ -85,6 +87,36 @@ async function getGuildInfo() {
   return res.json();
 }
 
+async function getGuildTextChannels() {
+  const res = await fetch(`${API_BASE}/guilds/${config.DISCORD_GUILD_ID}/channels`, {
+    headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch guild channels: ${res.status}`);
+  return (await res.json()).filter((channel) => channel.type === 0).sort((a, b) => a.position - b.position);
+}
+
+async function createLeaderboardMessage(channelId, payload) {
+  const logo = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'images', 'wardogs-logo.png'));
+  const form = new FormData();
+  form.append('payload_json', JSON.stringify(payload));
+  form.append('files[0]', new Blob([logo], { type: 'image/png' }), 'wardogs-logo.png');
+  const res = await fetch(`${API_BASE}/channels/${channelId}/messages`, {
+    method: 'POST', headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` }, body: form,
+  });
+  if (!res.ok) throw new Error(`Failed to send leaderboard message: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function updateLeaderboardMessage(channelId, messageId, payload) {
+  const res = await fetch(`${API_BASE}/channels/${channelId}/messages/${messageId}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to update leaderboard message: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 module.exports = {
   getAuthorizeUrl,
   exchangeCode,
@@ -93,4 +125,7 @@ module.exports = {
   getGuildRoles,
   getGuildMembers,
   getGuildInfo,
+  getGuildTextChannels,
+  createLeaderboardMessage,
+  updateLeaderboardMessage,
 };

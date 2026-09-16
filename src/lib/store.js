@@ -13,6 +13,8 @@ function ensureStore(defaultAdminRoleIds) {
     memberRoleIds: [],
     recruitRankRoleId: null,
     memberRankRoleId: null,
+    leaderboardChannelId: null,
+    leaderboardMessageId: null,
   });
 }
 
@@ -26,6 +28,8 @@ function readAccess() {
     memberRoleIds: [],
     recruitRankRoleId: null,
     memberRankRoleId: null,
+    leaderboardChannelId: null,
+    leaderboardMessageId: null,
     ...data,
   };
 }

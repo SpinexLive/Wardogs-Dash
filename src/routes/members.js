@@ -36,6 +36,7 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
     const members = await loadMembers(access.memberRoleIds);
     const steamIds = steamStore.readSteamIds();
     const cashTotals = rosterDb.getCashTotals(Object.values(steamIds));
+    const matchStats = rosterDb.getMatchStats(Object.values(steamIds));
 
     let vipError = null;
     let reservedSlots = new Set();
@@ -53,14 +54,16 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
     const membersWithVip = members.map((member) => {
       const steamId = steamIds[member.id] || null;
       const livePlayer = steamId ? connectedPlayers.get(String(steamId)) : null;
+      const stats = steamId ? matchStats.get(String(steamId)) : null;
       return {
         ...member,
         steamId,
         vip: Boolean(steamId && reservedSlots.has(steamId)),
         online: Boolean(livePlayer),
-        kills: livePlayer?.kills ?? null,
-        deaths: livePlayer?.deaths ?? null,
-        kd: livePlayer ? (Number(livePlayer.deaths) ? (Number(livePlayer.kills) / Number(livePlayer.deaths)).toFixed(2) : Number(livePlayer.kills).toFixed(2)) : null,
+        allTimeKills: stats?.totalKills || 0,
+        averageKills: stats?.avgKills === null || !stats ? null : stats.avgKills.toFixed(2),
+        averageDeaths: stats?.avgDeaths === null || !stats ? null : stats.avgDeaths.toFixed(2),
+        averageKd: stats?.avgKd === null || !stats ? null : stats.avgKd.toFixed(2),
         cashEarned: steamId ? (cashTotals.get(String(steamId)) || 0) : null,
         isRecruit: Boolean(access.recruitRankRoleId && member.roles.includes(access.recruitRankRoleId)),
         isMemberRank: Boolean(access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)),
