@@ -697,6 +697,7 @@ body.roster-builder-body { height: 100vh; overflow: hidden; }
 .member-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .member-row--online { background: linear-gradient(90deg, rgba(87,242,135,.08), transparent 50%); }.member-row--online:hover { background: linear-gradient(90deg, rgba(87,242,135,.14), rgba(143,28,28,.08)); }.server-presence { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }.server-presence i { width: 7px; height: 7px; border: 1px solid var(--muted); border-radius: 50%; }.server-presence--online { color: #57f287; }.server-presence--online i { background: #57f287; border-color: #57f287; box-shadow: 0 0 9px rgba(87,242,135,.8); }
 .cash-value { color: #ffd671; font-family: Consolas, monospace; font-size: 13px; font-weight: 800; }
+.metric-card--cash { border-top-color: #d4b106; background: linear-gradient(135deg, rgba(212,177,6,.18), rgba(24,24,27,.96) 65%); }.metric-card--cash .metric-card__label, .metric-card--cash .metric-card__detail { color: #f3dc88; }.metric-card--cash .metric-card__value { color: #ffe58a; text-shadow: 0 0 20px rgba(212,177,6,.2); }
 
 /* Fixed personnel workspace: search, toolbar, and column labels never leave view. */
 body.members-body { height: 100vh; overflow: hidden; }
