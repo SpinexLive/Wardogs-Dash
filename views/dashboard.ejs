@@ -5,64 +5,60 @@
 </head>
 <body>
   <%- include('partials/nav') %>
-
-  <main class="page">
-    <div class="page-header">
-      <% if (guild.icon) { %>
-        <img class="guild-icon" src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png" alt="" />
-      <% } %>
+  <main class="page dashboard-page">
+    <header class="dashboard-header">
       <div>
-        <h1><%= guild.name %></h1>
-        <p class="muted">Welcome back, <%= user.username %> 👋</p>
+        <p class="eyebrow">Operations overview</p>
+        <h1>Wardogs Command</h1>
+        <p class="muted">Live roster, attendance, and competitive performance.</p>
       </div>
-    </div>
+      <% if (access.isAdmin) { %>
+        <div class="header-actions">
+          <%- include('partials/action-button', { href: '/members', label: 'Manage roster', primary: false }) %>
+          <form method="POST" action="/dashboard/update-vip"><button type="submit" class="action-button action-button--primary">Sync VIP slots</button></form>
+        </div>
+      <% } %>
+    </header>
 
-    <section class="cards">
-      <div class="card">
-        <span class="card-label">Total Members</span>
-        <span class="card-value"><%= guild.approximate_member_count ?? '—' %></span>
-      </div>
-      <div class="card">
-        <span class="card-label">Online Now</span>
-        <span class="card-value"><%= guild.approximate_presence_count ?? '—' %></span>
-      </div>
-      <div class="card">
-        <span class="card-label">Your Access</span>
-        <span class="card-value"><%= access.isAdmin ? 'Admin' : 'Member' %></span>
-      </div>
+    <% if (vipSuccess) { %><p class="save-confirm"><%= vipSuccess %></p><% } %>
+    <% if (vipError) { %><p class="error-banner"><%= vipError %></p><% } %>
+
+    <section class="metric-grid">
+      <%- include('partials/metric-card', { label: 'Active roster', value: dashboard.metrics.rosterCount, detail: 'Configured member roles' }) %>
+      <%- include('partials/metric-card', { label: 'Ranked members', value: dashboard.metrics.memberRanked, detail: 'Holding the Member rank' }) %>
+      <%- include('partials/metric-card', { label: 'Steam linked', value: dashboard.metrics.steamCoverage + '%', detail: dashboard.metrics.steamLinked + ' roster records linked' }) %>
+      <%- include('partials/metric-card', { label: 'VIP ready', value: dashboard.metrics.vipEligible, detail: 'Eligible players with Steam IDs' }) %>
     </section>
 
-    <section class="panel">
-      <h2>Bot &amp; Community Overview</h2>
-      <p class="muted">
-        This is your dashboard home. Hook up more bot stats, moderation tools, or event widgets here as
-        the project grows.
-      </p>
+    <section class="dashboard-columns">
+      <section class="dashboard-panel dashboard-panel--wide">
+        <div class="panel-heading"><div><p class="eyebrow">Competitive</p><h2>Match history</h2></div><span class="status-pill"><%= dashboard.metrics.matchesPlayed %> recorded</span></div>
+        <% if (dashboard.matches.length) { %>
+          <div class="activity-list">
+            <% dashboard.matches.forEach((match) => { %>
+              <article class="activity-row"><span class="result-dot result-dot--<%= match.result %>"></span><div><strong>vs <%= match.opponent || 'Unknown opponent' %></strong><p><%= match.score || 'Score pending' %> · <%= match.date || 'Date pending' %></p></div><span class="match-result"><%= match.result || 'pending' %></span></article>
+            <% }) %>
+          </div>
+        <% } else { %><p class="empty-state">No match records have been stored yet.</p><% } %>
+      </section>
+      <section class="dashboard-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Readiness</p><h2>Attendance</h2></div><span class="status-pill <%= dashboard.metrics.attendanceRate === null ? 'status-pill--muted' : '' %>"><%= dashboard.metrics.attendanceRate === null ? 'No data' : dashboard.metrics.attendanceRate + '%' %></span></div>
+        <% if (dashboard.attendance.length) { %>
+          <div class="activity-list"><% dashboard.attendance.forEach((session) => { %><article class="attendance-row"><span><strong><%= session.present || 0 %></strong>/<%= session.expected || 0 %></span><div><strong><%= session.label || 'Attendance session' %></strong><p><%= session.date || 'Date pending' %></p></div></article><% }) %></div>
+        <% } else { %><p class="empty-state">No attendance sessions have been logged.</p><% } %>
+      </section>
     </section>
 
-    <% if (access.isAdmin) { %>
-      <section class="panel">
-        <h2>Quick Links</h2>
-        <p class="muted">
-          <a href="/members" class="inline-link">View Members</a> &mdash; roster, Steam IDs, and stats.
-        </p>
+    <section class="dashboard-columns dashboard-columns--bottom">
+      <section class="dashboard-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Roster</p><h2>Recent changes</h2></div></div>
+        <% if (dashboard.rosterChanges.length) { %><div class="activity-list"><% dashboard.rosterChanges.forEach((change) => { %><article class="activity-row"><span class="activity-marker"></span><div><strong><%= change.member || 'Roster update' %></strong><p><%= change.type || 'Updated' %> · <%= change.date || 'Date pending' %></p></div></article><% }) %></div><% } else { %><p class="empty-state">No roster changes have been recorded.</p><% } %>
       </section>
-
-      <section class="panel">
-        <h2>VIP Slots</h2>
-        <p class="muted">
-          Syncs the server's reserved VIP slots to everyone with the Member Role. Anyone with the
-          Recruit Role is skipped even if they also hold the Member Role.
-        </p>
-
-        <% if (vipSuccess) { %><p class="save-confirm"><%= vipSuccess %></p><% } %>
-        <% if (vipError) { %><p class="error-banner"><%= vipError %></p><% } %>
-
-        <form method="POST" action="/dashboard/update-vip">
-          <button type="submit" class="btn-primary">Update VIP Slots</button>
-        </form>
+      <section class="dashboard-panel kpi-panel">
+        <p class="eyebrow">Clan performance</p><h2>Performance KPIs</h2>
+        <div class="kpi-grid"><div><span>Win rate</span><strong><%= dashboard.metrics.winRate === null ? '—' : dashboard.metrics.winRate + '%' %></strong></div><div><span>Matches</span><strong><%= dashboard.metrics.matchesPlayed %></strong></div><div><span>Attendance</span><strong><%= dashboard.metrics.attendanceRate === null ? '—' : dashboard.metrics.attendanceRate + '%' %></strong></div></div>
       </section>
-    <% } %>
+    </section>
   </main>
 </body>
 </html>

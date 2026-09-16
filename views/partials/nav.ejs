@@ -1,18 +1,18 @@
-<header class="topbar">
+<aside class="sidebar">
   <a href="/dashboard" class="brand">
     <img src="/images/wardogs-logo.png" alt="" class="brand-logo" />
     Wardogs Dash
   </a>
-  <nav class="topnav">
-    <a href="/dashboard" class="<%= active === 'dashboard' ? 'active' : '' %>">Dashboard</a>
+  <nav class="side-nav" aria-label="Primary navigation">
+    <a href="/dashboard" class="<%= active === 'dashboard' ? 'active' : '' %>"><span aria-hidden="true">▦</span> Dashboard</a>
     <% if (access.isAdmin) { %>
-      <a href="/members" class="<%= active === 'members' ? 'active' : '' %>">Members</a>
-      <a href="/settings" class="<%= active === 'settings' ? 'active' : '' %>">Settings</a>
+      <a href="/members" class="<%= active === 'members' ? 'active' : '' %>"><span aria-hidden="true">◉</span> Members</a>
+      <a href="/settings" class="<%= active === 'settings' ? 'active' : '' %>"><span aria-hidden="true">⚙</span> Settings</a>
     <% } %>
   </nav>
-  <div class="user-chip">
+  <div class="user-chip sidebar-user">
     <img src="<%= user.avatar %>" alt="" />
     <span><%= user.username %></span>
     <a href="/auth/logout" class="logout">Logout</a>
   </div>
-</header>
+</aside>

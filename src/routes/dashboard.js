@@ -1,16 +1,16 @@
 const express = require('express');
-const discord = require('../lib/discord');
 const rcon = require('../lib/rcon');
 const roster = require('../lib/roster');
+const { getDashboardMetrics } = require('../lib/dashboardMetrics');
 const { requireAuth, requireDashboardAccess, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
   try {
-    const guild = await discord.getGuildInfo();
+    const dashboard = await getDashboardMetrics();
     res.render('dashboard', {
-      guild,
+      dashboard,
       active: 'dashboard',
       vipSuccess: req.query.vipSuccess || null,
       vipError: req.query.vipError || null,

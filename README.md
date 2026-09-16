@@ -53,6 +53,7 @@ src/
   lib/roster.js        computes who should have VIP
   lib/store.js         reads/writes data/access.json
   lib/steamStore.js    reads/writes data/steam-ids.json
+  lib/dashboardMetrics.js  aggregates live roster and operational metrics
   middleware/auth.js  auth/admin route guards
   routes/             auth, dashboard, members, settings routes
 views/                EJS templates
@@ -60,7 +61,23 @@ public/css/           styles
 public/images/        logo/static images
 data/access.json      role access lists (gitignored, created on first run)
 data/steam-ids.json   discord user id -> steam id (gitignored, created on first run)
+data/operations.json  optional attendance, match, and roster-change records
 data/sessions/        session store files (gitignored, created on first run)
+```
+
+## Operational dashboard data
+
+The dashboard continues to use the existing roster and Steam-ID stores for roster/VIP metrics.
+It reads attendance, match history, and roster-change records from `data/operations.json` when
+available. An empty or absent file renders an explicit empty state; no sample Discord data is used.
+The importer can write this shape without changing the dashboard route:
+
+```json
+{
+  "attendance": [{ "date": "2026-09-16", "label": "Training", "present": 18, "expected": 24 }],
+  "matches": [{ "date": "2026-09-15", "opponent": "Example Clan", "result": "win", "score": "3–1" }],
+  "rosterChanges": [{ "date": "2026-09-14", "member": "Player", "type": "Promoted" }]
+}
 ```
 
 ## Deploying to your VPS with Docker
