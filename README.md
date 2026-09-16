@@ -72,6 +72,10 @@ The `/roster` page fetches events server-side from Raid-Helper v4 using the exis
 exposed to the browser. The adapter accepts top-level arrays as well as `events` or `data` response arrays and
 only renders events whose `name` (or `title`) starts exactly with `⚔️`.
 
+Saved rosters are stored in `data/wardogs.db` using SQLite. The database is created automatically
+and contains separate `rosters`, `squads`, and `roster_assignments` tables; the file must remain on
+the persistent `data` volume when deploying.
+
 ## Operational dashboard data
 
 The dashboard continues to use the existing roster and Steam-ID stores for roster/VIP metrics.

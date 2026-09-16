@@ -1,0 +1,80 @@
+(() => {
+  const { event: match, savedRoster } = window.rosterBootstrap;
+  const templates = {
+    infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png' },
+    armour: { label: 'Armour Crew', leaderSlots: 0, playerSlots: 2, fixedSlots: 0, icon: '/images/armour.png' },
+    fob: { label: 'FOB Team', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/FOB.png' },
+    pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png' },
+    commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png' },
+  };
+  const roleIcons = { infantry: '/images/infantry.png', armour: '/images/armour.png', fob: '/images/FOB.png', pilot: '/images/pilot.png', commander: '/images/wardogs.png' };
+  const state = { query: '', role: 'all', squads: [] };
+  let draggedPlayer = null;
+
+  function fromSaved() {
+    if (!savedRoster) return;
+    state.squads = savedRoster.squads.map((squad, index) => ({
+      key: `saved-${squad.id}-${index}`, name: squad.name, template: squad.template, leaderSlots: squad.leader_slots, playerSlots: squad.player_slots, fixedSlots: squad.fixed_slots,
+      assignments: squad.assignments.map((assignment) => match.players.find((player) => player.id === assignment.player_id) || { id: assignment.player_id, name: assignment.player_name, role: assignment.player_role }),
+    }));
+  }
+  function capacity(squad) { return Number(squad.leaderSlots) + Number(squad.playerSlots) + Number(squad.fixedSlots); }
+  function totalSlots() { return state.squads.reduce((total, squad) => total + capacity(squad), 0); }
+  function assigned() { return state.squads.reduce((total, squad) => total + squad.assignments.length, 0); }
+  function unassign(playerId) { state.squads.forEach((squad) => { squad.assignments = squad.assignments.filter((player) => player.id !== playerId); }); }
+  function addTemplate(template) {
+    const spec = templates[template];
+    if (totalSlots() + spec.leaderSlots + spec.playerSlots + spec.fixedSlots > 33) return render();
+    state.squads.push({ key: `${template}-${Date.now()}-${Math.random()}`, name: spec.label, template, leaderSlots: spec.leaderSlots, playerSlots: spec.playerSlots, fixedSlots: spec.fixedSlots, assignments: [] });
+    render();
+  }
+  function playerItem(player, compact = false) {
+    return `<div class="roster-player ${compact ? 'roster-player--compact' : ''}" draggable="true" data-player-id="${player.id}"><img src="${roleIcons[player.role]}" alt="" /><span>${escapeHtml(player.name)}</span><small>${player.role}</small><b aria-hidden="true">⠿</b></div>`;
+  }
+  function escapeHtml(value) { const node = document.createElement('div'); node.textContent = value; return node.innerHTML; }
+  function renderPlayers() {
+    const assignedIds = new Set(state.squads.flatMap((squad) => squad.assignments.map((player) => player.id)));
+    const players = match.players.filter((player) => (state.role === 'all' || player.role === state.role) && player.name.toLowerCase().includes(state.query.toLowerCase()));
+    document.getElementById('player-list').innerHTML = players.map((player) => `<div class="${assignedIds.has(player.id) ? 'is-assigned' : ''}">${playerItem(player)}${assignedIds.has(player.id) ? '<em>Assigned</em>' : ''}</div>`).join('') || '<p class="empty-state">No players match.</p>';
+  }
+  function squadCard(squad, index) {
+    const spec = templates[squad.template];
+    const slots = Array.from({ length: capacity(squad) }, (_, slot) => squad.assignments[slot] ? playerItem(squad.assignments[slot], true) : `<div class="squad-slot" data-slot="${slot}">Drop player here</div>`).join('');
+    const editable = squad.template !== 'commander';
+    return `<article class="squad-card" data-squad-key="${squad.key}"><header><img src="${spec.icon}" alt="" /><input class="squad-name" value="${escapeHtml(squad.name)}" data-index="${index}" aria-label="Squad name" /><button class="remove-squad" data-index="${index}" aria-label="Remove squad">×</button></header><div class="squad-controls"><label>Squad Leaders<input type="number" min="0" max="33" value="${squad.leaderSlots}" data-field="leaderSlots" data-index="${index}" ${editable ? '' : 'disabled'} /></label><label>Players<input type="number" min="0" max="33" value="${squad.playerSlots}" data-field="playerSlots" data-index="${index}" ${editable ? '' : 'disabled'} /></label><span>${capacity(squad)} slots</span></div><div class="squad-slot-list" data-drop-squad="${squad.key}">${slots}</div></article>`;
+  }
+  function renderSquads() { document.getElementById('squad-list').innerHTML = state.squads.map(squadCard).join('') || '<p class="empty-state">Choose a template to add your first squad.</p>'; }
+  function renderCounter() {
+    const slots = totalSlots(); const count = assigned(); const invalid = slots > 33 || count > 33;
+    document.getElementById('slot-counter').textContent = `${count} / 33`;
+    document.getElementById('slot-remaining').textContent = `${Math.max(0, 33 - slots)} squad slot${33 - slots === 1 ? '' : 's'} available`;
+    const warning = document.getElementById('slot-warning'); warning.hidden = !invalid; warning.textContent = invalid ? 'This roster exceeds the 33-player limit. Reduce squad slots before saving.' : '';
+    document.getElementById('save-roster').disabled = invalid;
+  }
+  function bindDrag() {
+    document.querySelectorAll('.roster-player[draggable]').forEach((element) => {
+      element.addEventListener('dragstart', () => { draggedPlayer = match.players.find((player) => player.id === element.dataset.playerId); element.classList.add('is-dragging'); });
+      element.addEventListener('dragend', () => element.classList.remove('is-dragging'));
+    });
+    document.querySelectorAll('[data-drop-squad]').forEach((zone) => {
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-drop-target'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('is-drop-target'));
+      zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('is-drop-target'); if (!draggedPlayer) return; const squad = state.squads.find((item) => item.key === zone.dataset.dropSquad); const target = e.target.closest('[data-slot], .roster-player'); const index = target?.dataset.slot !== undefined ? Number(target.dataset.slot) : squad.assignments.findIndex((item) => item.id === target?.dataset.playerId); if (squad.assignments.length >= capacity(squad) && index < 0) return; unassign(draggedPlayer.id); squad.assignments.splice(index < 0 ? squad.assignments.length : index, 0, draggedPlayer); squad.assignments = squad.assignments.slice(0, capacity(squad)); render(); });
+    });
+    const playerList = document.getElementById('player-list');
+    playerList.addEventListener('dragover', (e) => e.preventDefault());
+    playerList.addEventListener('drop', (e) => { e.preventDefault(); if (draggedPlayer) { unassign(draggedPlayer.id); render(); } });
+  }
+  function render() { renderPlayers(); renderSquads(); renderCounter(); bindDrag(); }
+  document.getElementById('event-time').textContent = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(match.startTime * 1000)) + ' (Europe/London)';
+  document.getElementById('player-search').addEventListener('input', (e) => { state.query = e.target.value; renderPlayers(); bindDrag(); });
+  document.getElementById('role-filter').addEventListener('click', (e) => { const button = e.target.closest('[data-role]'); if (!button) return; state.role = button.dataset.role; document.querySelectorAll('[data-role]').forEach((item) => item.classList.toggle('active', item === button)); renderPlayers(); bindDrag(); });
+  document.getElementById('template-bar').addEventListener('click', (e) => { const button = e.target.closest('[data-template]'); if (button) addTemplate(button.dataset.template); });
+  document.getElementById('squad-list').addEventListener('input', (e) => { const index = Number(e.target.dataset.index); const squad = state.squads[index]; if (!squad) return; if (e.target.classList.contains('squad-name')) squad.name = e.target.value; if (e.target.dataset.field) { squad[e.target.dataset.field] = Math.max(0, Number(e.target.value)); squad.assignments = squad.assignments.slice(0, capacity(squad)); } render(); });
+  document.getElementById('squad-list').addEventListener('click', (e) => { const button = e.target.closest('.remove-squad'); if (button) { state.squads.splice(Number(button.dataset.index), 1); render(); } });
+  document.getElementById('save-roster').addEventListener('click', async () => {
+    const message = document.getElementById('roster-message'); message.hidden = true;
+    try { const response = await fetch(`/roster/${match.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: match, squads: state.squads.map((squad) => ({ ...squad, capacity: capacity(squad) })) }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save roster.'); message.textContent = 'Roster saved.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
+  });
+  fromSaved(); render();
+})();

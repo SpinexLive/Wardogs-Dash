@@ -30,6 +30,7 @@ if (config.NODE_ENV === 'production') {
 }
 
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;

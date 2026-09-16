@@ -3,6 +3,8 @@ node_modules/
 data/access.json
 data/steam-ids.json
 data/operations.json
+data/wardogs.db
+data/wardogs.db-*
 data/sessions/
 npm-debug.log*
 *.log
