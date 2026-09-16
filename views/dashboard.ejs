@@ -50,9 +50,11 @@
     </section>
 
     <section class="dashboard-columns dashboard-columns--bottom">
-      <section class="dashboard-panel">
-        <div class="panel-heading"><div><p class="eyebrow">Roster</p><h2>Recent changes</h2></div></div>
-        <% if (dashboard.rosterChanges.length) { %><div class="activity-list"><% dashboard.rosterChanges.forEach((change) => { %><article class="activity-row"><span class="activity-marker"></span><div><strong><%= change.member || 'Roster update' %></strong><p><%= change.type || 'Updated' %> · <%= change.date || 'Date pending' %></p></div></article><% }) %></div><% } else { %><p class="empty-state">No roster changes have been recorded.</p><% } %>
+      <section class="dashboard-panel kpi-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Warcon performance</p><h2>Average clan stats</h2></div><span class="status-pill <%= dashboard.metrics.clanAverages ? '' : 'status-pill--muted' %>"><%= dashboard.metrics.clanAverages ? dashboard.metrics.clanAverages.tracked + ' tracked' : 'No data' %></span></div>
+        <% if (dashboard.metrics.clanAverages) { const averages = dashboard.metrics.clanAverages; %>
+          <div class="kpi-grid clan-average-grid"><div><span>Avg kills</span><strong><%= averages.kills.toFixed(1) %></strong></div><div><span>Avg deaths</span><strong><%= averages.deaths.toFixed(1) %></strong></div><div><span>Clan K/D</span><strong><%= averages.kd.toFixed(2) %></strong></div><div><span>Avg sessions</span><strong><%= averages.sessions.toFixed(1) %></strong></div><div><span>Avg playtime</span><strong><%= Math.round(averages.minutes) %>m</strong></div><div><span>Clan KPM</span><strong><%= averages.kpm.toFixed(2) %></strong></div></div>
+        <% } else { %><p class="empty-state">Warcon performance data will appear once its API key and server ID are configured.</p><% } %>
       </section>
       <section class="dashboard-panel kpi-panel">
         <p class="eyebrow">Clan performance</p><h2>Performance KPIs</h2>

@@ -5,16 +5,16 @@ const store = require('./store');
 const steamStore = require('./steamStore');
 const rcon = require('./rcon');
 const rosterDb = require('./rosterDb');
+const warcon = require('./warcon');
 
 const OPERATIONS_FILE = path.join(__dirname, '..', '..', 'data', 'operations.json');
 
 function readOperations() {
-  if (!fs.existsSync(OPERATIONS_FILE)) return { attendance: [], matches: [], rosterChanges: [] };
+  if (!fs.existsSync(OPERATIONS_FILE)) return { attendance: [], matches: [] };
   const data = JSON.parse(fs.readFileSync(OPERATIONS_FILE, 'utf8'));
   return {
     attendance: Array.isArray(data.attendance) ? data.attendance : [],
     matches: Array.isArray(data.matches) ? data.matches : [],
-    rosterChanges: Array.isArray(data.rosterChanges) ? data.rosterChanges : [],
   };
 }
 
@@ -34,6 +34,26 @@ function calculateWinRate(matches) {
   return completed.length ? Math.round((completed.filter((match) => match.result === 'win').length / completed.length) * 100) : null;
 }
 
+function calculateClanAverages(performance) {
+  const values = [...performance.values()];
+  if (!values.length) return null;
+  const totals = values.reduce((total, player) => ({
+    kills: total.kills + player.kills,
+    deaths: total.deaths + player.deaths,
+    sessions: total.sessions + player.sessions,
+    minutes: total.minutes + player.minutes,
+  }), { kills: 0, deaths: 0, sessions: 0, minutes: 0 });
+  return {
+    tracked: values.length,
+    kills: totals.kills / values.length,
+    deaths: totals.deaths / values.length,
+    sessions: totals.sessions / values.length,
+    minutes: totals.minutes / values.length,
+    kd: totals.deaths ? totals.kills / totals.deaths : totals.kills,
+    kpm: totals.minutes ? totals.kills / totals.minutes : 0,
+  };
+}
+
 async function getDashboardMetrics() {
   const [guildMembers, access] = await Promise.all([discord.getGuildMembers(), store.readAccess()]);
   const steamIds = steamStore.readSteamIds();
@@ -41,6 +61,14 @@ async function getDashboardMetrics() {
   const roster = access.memberRoleIds.length ? guildMembers.filter((member) => member.roles.some((id) => access.memberRoleIds.includes(id))) : [];
   const eligible = roster.filter((member) => !access.recruitRankRoleId || !member.roles.includes(access.recruitRankRoleId));
   const steamLinked = roster.filter((member) => steamIds[member.user.id]).length;
+  let clanAverages = null;
+  if (warcon.isConfigured()) {
+    try {
+      clanAverages = calculateClanAverages(await warcon.getPlayerSummaries(roster.map((member) => steamIds[member.user.id]).filter(Boolean)));
+    } catch (_) {
+      // Performance data is supplementary; a Warcon outage must not block the dashboard.
+    }
+  }
   const attendance = newestFirst(operations.attendance);
   const matches = newestFirst(operations.matches);
   let serverPlayers = null;
@@ -68,10 +96,10 @@ async function getDashboardMetrics() {
       serverPlayers,
       serverCapacity,
       cashEarned: rosterDb.getCommunityCashTotal(),
+      clanAverages,
     },
     attendance: attendance.slice(0, 4),
     matches: matches.slice(0, 5),
-    rosterChanges: newestFirst(operations.rosterChanges).slice(0, 5),
   };
 }
 
