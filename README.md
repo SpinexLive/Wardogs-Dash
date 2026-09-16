@@ -67,7 +67,7 @@ data/sessions/        session store files (gitignored, created on first run)
 
 ## Raid-Helper roster events
 
-The `/roster` page fetches events server-side from Raid-Helper using the existing
+The `/roster` page fetches events server-side from Raid-Helper v4 using the existing
 `DISCORD_GUILD_ID` as its server ID. Set only `RAID_HELPER_API_TOKEN` in `.env`; the token is never
 exposed to the browser. The adapter accepts top-level arrays as well as `events` or `data` response arrays and
 only renders events whose `name` (or `title`) starts exactly with `⚔️`.
