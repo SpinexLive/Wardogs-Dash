@@ -6,8 +6,8 @@
   <nav class="side-nav" aria-label="Primary navigation">
     <a href="/dashboard" class="<%= active === 'dashboard' ? 'active' : '' %>"><span aria-hidden="true">▦</span> Dashboard</a>
     <a href="/roster" class="<%= active === 'roster' ? 'active' : '' %>"><span aria-hidden="true">⚔</span> Roster</a>
+    <a href="/members" class="<%= active === 'members' ? 'active' : '' %>"><span aria-hidden="true">◉</span> Members</a>
     <% if (access.isAdmin) { %>
-      <a href="/members" class="<%= active === 'members' ? 'active' : '' %>"><span aria-hidden="true">◉</span> Members</a>
       <a href="/settings" class="<%= active === 'settings' ? 'active' : '' %>"><span aria-hidden="true">⚙</span> Settings</a>
     <% } %>
   </nav>

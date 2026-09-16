@@ -2,7 +2,7 @@ const express = require('express');
 const rcon = require('../lib/rcon');
 const roster = require('../lib/roster');
 const { getDashboardMetrics } = require('../lib/dashboardMetrics');
-const { requireAuth, requireDashboardAccess, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
   }
 });
 
-router.post('/update-vip', requireAuth, requireAdmin, async (req, res) => {
+router.post('/update-vip', requireAuth, requireDashboardAccess, async (req, res) => {
   if (!rcon.isConfigured()) {
     return res.redirect(
       `/dashboard?vipError=${encodeURIComponent('RCON is not configured. Set RCON_HOST/RCON_PORT/RCON_PASSWORD in .env.')}`

@@ -4,7 +4,7 @@ const store = require('../lib/store');
 const steamStore = require('../lib/steamStore');
 const rcon = require('../lib/rcon');
 const rosterDb = require('../lib/rosterDb');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
 const MAX_STEAM_ID_LENGTH = 64;
@@ -30,7 +30,7 @@ async function loadMembers(memberRoleIds) {
     .sort((a, b) => a.nickname.localeCompare(b.nickname));
 }
 
-router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
+router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
   try {
     const access = store.readAccess();
     const members = await loadMembers(access.memberRoleIds);
@@ -84,7 +84,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.post('/steam-id', requireAuth, requireAdmin, (req, res, next) => {
+router.post('/steam-id', requireAuth, requireDashboardAccess, (req, res, next) => {
   try {
     const { userId, steamId } = req.body;
     if (!userId) return res.redirect('/members');

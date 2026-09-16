@@ -12,12 +12,10 @@
         <h1>Wardogs Command</h1>
         <p class="muted">Live roster, attendance, and competitive performance.</p>
       </div>
-      <% if (access.isAdmin) { %>
-        <div class="header-actions">
-          <%- include('partials/action-button', { href: '/members', label: 'Manage roster', primary: false }) %>
-          <form method="POST" action="/dashboard/update-vip"><button type="submit" class="action-button action-button--primary">Sync VIP slots</button></form>
-        </div>
-      <% } %>
+      <div class="header-actions">
+        <%- include('partials/action-button', { href: '/members', label: 'Manage roster', primary: false }) %>
+        <form method="POST" action="/dashboard/update-vip"><button type="submit" class="action-button action-button--primary">Sync VIP slots</button></form>
+      </div>
     </header>
 
     <% if (vipSuccess) { %><p class="save-confirm"><%= vipSuccess %></p><% } %>
