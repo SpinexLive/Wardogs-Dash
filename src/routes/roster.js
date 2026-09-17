@@ -1,6 +1,8 @@
 const express = require('express');
 const { getRosterEvents, getRosterEvent } = require('../lib/raidHelper');
 const rosterDb = require('../lib/rosterDb');
+const steamStore = require('../lib/steamStore');
+const warcon = require('../lib/warcon');
 const { requireAuth, requireDashboardAccess, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
@@ -11,7 +13,23 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 router.get('/:eventId', requireAuth, requireDashboardAccess, async (req, res, next) => {
-  try { res.render('roster-builder', { active: 'roster', event: await getRosterEvent(req.params.eventId), savedRoster: rosterDb.getRoster(req.params.eventId), error: null }); } catch (err) { next(err); }
+  try {
+    const event = await getRosterEvent(req.params.eventId);
+    const steamIds = steamStore.readSteamIds();
+    let performance = new Map();
+    if (warcon.isConfigured()) {
+      try {
+        performance = await warcon.getPlayerSummaries(event.players.map((player) => steamIds[player.id]).filter(Boolean));
+      } catch (_) {
+        // Roster construction remains available if Warcon is temporarily unavailable.
+      }
+    }
+    event.players = event.players.map((player) => {
+      const stats = performance.get(String(steamIds[player.id] || ''));
+      return { ...player, performance: stats ? { kd: stats.kd.toFixed(2), kpm: stats.kpm.toFixed(2) } : null };
+    });
+    res.render('roster-builder', { active: 'roster', event, savedRoster: rosterDb.getRoster(req.params.eventId), error: null });
+  } catch (err) { next(err); }
 });
 router.post('/:eventId', requireAuth, requireAdmin, (req, res, next) => {
   try {

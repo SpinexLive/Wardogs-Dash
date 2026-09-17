@@ -2,8 +2,8 @@
   const { event: match, savedRoster } = window.rosterBootstrap;
   const templates = {
     infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png', showLeaderControl: true, showPlayerControl: true },
-    armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1, playerMax: 2 },
-    fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1, showMortarControl: true, mortarMin: 1, mortarMax: 33 },
+    armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, playerMax: 2 },
+    fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, showMortarControl: true, mortarMin: 0, mortarMax: 33 },
     pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png', showLeaderControl: false, showPlayerControl: true },
     commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png', showLeaderControl: false, showPlayerControl: false },
   };
@@ -51,7 +51,10 @@
   }
   function playerItem(player, compact = false, slotIcon = null) {
     const icon = slotIcon || roleIcons[player.role] || roleIcons.infantry;
-    return `<div class="roster-player ${compact ? 'roster-player--compact' : ''}" draggable="true" data-player-id="${player.id}"><img src="${icon}" alt="" /><span>${escapeHtml(player.name)}</span><small>${player.role}</small><b aria-hidden="true">⠿</b></div>`;
+    const performance = !compact
+      ? `<div class="roster-player-stats"><span>K/D <strong>${player.performance?.kd || '—'}</strong></span><span>KPM <strong>${player.performance?.kpm || '—'}</strong></span></div>`
+      : '';
+    return `<div class="roster-player ${compact ? 'roster-player--compact' : ''}" draggable="true" data-player-id="${player.id}" title="${compact ? 'Double-click to return this player to the player list' : 'Drag to a squad slot'}"><img src="${icon}" alt="" /><div class="roster-player-identity"><span>${escapeHtml(player.name)}</span><small>${player.role}</small></div>${performance}<b aria-hidden="true">⠿</b></div>`;
   }
   function escapeHtml(value) { const node = document.createElement('div'); node.textContent = value; return node.innerHTML; }
   function renderPlayers() {
