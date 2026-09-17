@@ -41,11 +41,10 @@
           </div>
         <% } else { %><p class="empty-state">No match records have been stored yet.</p><% } %>
       </section>
-      <section class="dashboard-panel">
-        <div class="panel-heading"><div><p class="eyebrow">Readiness</p><h2>Attendance</h2></div><span class="status-pill <%= dashboard.metrics.attendanceRate === null ? 'status-pill--muted' : '' %>"><%= dashboard.metrics.attendanceRate === null ? 'No data' : dashboard.metrics.attendanceRate + '%' %></span></div>
-        <% if (dashboard.attendance.length) { %>
-          <div class="activity-list"><% dashboard.attendance.forEach((session) => { %><article class="attendance-row"><span><strong><%= session.present || 0 %></strong>/<%= session.expected || 0 %></span><div><strong><%= session.label || 'Attendance session' %></strong><p><%= session.date || 'Date pending' %></p></div></article><% }) %></div>
-        <% } else { %><p class="empty-state">No attendance sessions have been logged.</p><% } %>
+      <section class="dashboard-panel briefing-create-card">
+        <div class="panel-heading"><div><p class="eyebrow">Readiness</p><h2>Create briefing</h2></div></div>
+        <p class="muted">Open an upcoming saved roster and check who is in the briefing channel and on the game server.</p>
+        <a href="/briefing" class="action-button action-button--primary">Create briefing</a>
       </section>
     </section>
 

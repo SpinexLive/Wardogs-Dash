@@ -37,7 +37,7 @@ async function buildPayload(eventId, { mentionAssigned = false } = {}) {
   const payload = {
     // Explicitly allow only rostered Discord users; roles and @everyone cannot be pinged.
     allowed_mentions: { parse: [], users: mentionAssigned ? assignedMemberIds : [] },
-    embeds: [{ color: 0xa61b1b, title: roster.event_name, thumbnail: { url: 'https://45-151-81-182.sslip.io/images/wardogs-logo.png' }, description: start ? `<t:${start}:F>\n📣 https://ptb.discord.com/channels/1332320879073296404/1546197103498363031` : 'Start time pending.', fields, footer: { text: '• Please confirm you attendance' } }],
+    embeds: [{ color: 0xa61b1b, title: roster.event_name, thumbnail: { url: 'https://45-151-81-182.sslip.io/images/wardogs-logo.png' }, description: start ? `<t:${start}:F>\nhttps://ptb.discord.com/channels/1332320879073296404/1546197103498363031` : 'Start time pending.', fields, footer: { text: '• Please confirm you attendance' } }],
     components: rosterButtons(eventId),
   };
   if (mentionAssigned && assignedMemberIds.length) payload.content = `${assignedMemberIds.map((id) => `<@${id}>`).join(' ')}`;
@@ -68,9 +68,8 @@ async function sendPendingReminder(eventId, channelId) {
   if (previousReminder) await discord.deleteChannelMessage(previousReminder.channel_id, previousReminder.message_id);
 
   const message = await discord.createChannelMessage(channelId, {
-    content: `📣 Roster reminder: ${pendingMemberIds.map((id) => `<@${id}>`).join(' ')}\nPlease confirm or decline your roster place below.`,
+    content: `${pendingMemberIds.map((id) => `<@${id}>`).join(' ')}\nPlease confirm or decline your roster place`,
     allowed_mentions: { parse: [], users: pendingMemberIds },
-    components: rosterButtons(eventId),
   });
   rosterDb.setRosterDiscordReminder(eventId, channelId, message.id);
   return message;

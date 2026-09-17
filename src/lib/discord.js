@@ -87,6 +87,17 @@ async function getGuildInfo() {
   return res.json();
 }
 
+// Returns null when the member is not connected to voice; the bot needs Connect
+// permission for any voice channel whose presence it is asked to inspect.
+async function getGuildVoiceState(userId) {
+  const res = await fetch(`${API_BASE}/guilds/${config.DISCORD_GUILD_ID}/voice-states/${userId}`, {
+    headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to fetch Discord voice state: ${res.status}`);
+  return res.json();
+}
+
 async function getGuildTextChannels() {
   const res = await fetch(`${API_BASE}/guilds/${config.DISCORD_GUILD_ID}/channels`, {
     headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` },
@@ -170,6 +181,7 @@ module.exports = {
   exchangeCode,
   getCurrentUser,
   getGuildMember,
+  getGuildVoiceState,
   getGuildRoles,
   getGuildMembers,
   getGuildInfo,

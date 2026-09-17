@@ -57,6 +57,9 @@ function getRoster(eventId) {
   roster.squads = db.prepare('SELECT * FROM squads WHERE event_id = ? ORDER BY position').all(eventId).map((squad) => ({ ...squad, assignments: db.prepare('SELECT * FROM roster_assignments WHERE squad_id = ? ORDER BY position').all(squad.id) }));
   return roster;
 }
+function getUpcomingRosters() {
+  return db.prepare('SELECT event_id, event_name, event_start, updated_at FROM rosters WHERE event_start > ? ORDER BY event_start ASC').all(Math.floor(Date.now() / 1000));
+}
 function getRosterDiscordMessage(eventId) { return db.prepare('SELECT * FROM roster_discord_messages WHERE event_id = ?').get(eventId) || null; }
 function setRosterDiscordMessage(eventId, channelId, messageId) { db.prepare('INSERT INTO roster_discord_messages (event_id, channel_id, message_id) VALUES (?, ?, ?) ON CONFLICT(event_id) DO UPDATE SET channel_id = excluded.channel_id, message_id = excluded.message_id').run(eventId, channelId, messageId); }
 function getRosterDiscordReminder(eventId) { return db.prepare('SELECT * FROM roster_discord_reminders WHERE event_id = ?').get(eventId) || null; }
@@ -169,4 +172,4 @@ function getMatchStats(steamIds) {
   }]));
 }
 
-module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, getRosterDiscordMessage, setRosterDiscordMessage, getRosterDiscordReminder, setRosterDiscordReminder, getRosterConfirmations, setRosterConfirmation, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };
+module.exports = { getRoster, getUpcomingRosters, hasRoster, saveRoster, deleteRoster, getRosterDiscordMessage, setRosterDiscordMessage, getRosterDiscordReminder, setRosterDiscordReminder, getRosterConfirmations, setRosterConfirmation, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };
