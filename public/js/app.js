@@ -71,3 +71,26 @@ if (memberRows) {
   });
 }
 
+// Visual guild-emoji pickers used by the Discord roster settings.
+document.querySelectorAll('[data-emoji-picker]').forEach((picker) => {
+  const trigger = picker.querySelector('.emoji-picker-trigger');
+  const options = picker.querySelector('.emoji-picker-options');
+  const input = picker.querySelector('input[type="hidden"]');
+  trigger.addEventListener('click', () => {
+    const opening = options.hidden;
+    document.querySelectorAll('.emoji-picker-options').forEach((item) => { item.hidden = true; });
+    options.hidden = !opening;
+    trigger.setAttribute('aria-expanded', String(opening));
+  });
+  options.addEventListener('click', (event) => {
+    const option = event.target.closest('.emoji-picker-option');
+    if (!option) return;
+    input.value = option.dataset.emojiId;
+    trigger.innerHTML = option.dataset.emojiSrc
+      ? `<img src="${option.dataset.emojiSrc}" alt="" /><span>${option.dataset.emojiName}</span><b>⌄</b>`
+      : '<span class="emoji-picker-default">Default emoji</span><b>⌄</b>';
+    options.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+  });
+});
+
