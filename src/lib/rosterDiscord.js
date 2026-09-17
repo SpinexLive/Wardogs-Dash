@@ -31,13 +31,13 @@ async function buildPayload(eventId, { mentionAssigned = false } = {}) {
   const payload = {
     // Explicitly allow only rostered Discord users; roles and @everyone cannot be pinged.
     allowed_mentions: { parse: [], users: mentionAssigned ? assignedMemberIds : [] },
-    embeds: [{ color: 0xa61b1b, title: roster.event_name, description: start ? `Starts: <t:${start}:F>\n<t:${start}:R>` : 'Start time pending.', fields, footer: { text: 'Wardogs roster • Use a button below to confirm attendance' } }],
+    embeds: [{ color: 0xa61b1b, title: roster.event_name, thumbnail: { url: 'https://45-151-81-182.sslip.io/images/wardogs-logo.png' }, description: start ? `<t:${start}:F>\n📣 https://ptb.discord.com/channels/1332320879073296404/1546197103498363031` : 'Start time pending.', fields, footer: { text: '• Please confirm you attendance' } }],
     components: [{ type: 1, components: [
       { type: 2, style: 3, label: 'Confirm', custom_id: `WD-confirm:${eventId}` },
       { type: 2, style: 4, label: 'Decline', custom_id: `WD-Decline:${eventId}` },
     ] }],
   };
-  if (mentionAssigned && assignedMemberIds.length) payload.content = `Roster call: ${assignedMemberIds.map((id) => `<@${id}>`).join(' ')}`;
+  if (mentionAssigned && assignedMemberIds.length) payload.content = `${assignedMemberIds.map((id) => `<@${id}>`).join(' ')}`;
   return payload;
 }
 
