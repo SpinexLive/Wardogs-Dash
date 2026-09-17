@@ -5,6 +5,7 @@
     armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, playerMax: 2 },
     fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, showMortarControl: true, mortarMin: 0, mortarMax: 33 },
     pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png', showLeaderControl: false, showPlayerControl: true },
+    recon: { label: 'Recon Team', leaderSlots: 0, playerSlots: 1, fixedSlots: 0, icon: '/images/recon.png', showLeaderControl: false, showPlayerControl: true },
     commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png', showLeaderControl: false, showPlayerControl: false },
   };
   const roleIcons = { infantry: '/images/infantry.png', armour: '/images/armour.png', fob: '/images/FOB.png', pilot: '/images/pilot.png', commander: '/images/wardogs.png' };
