@@ -13,11 +13,12 @@ async function loadSortedRoles() {
 
 async function renderSettings(req, res, overrides = {}) {
   const { status, ...viewOverrides } = overrides;
-  const [roles, channels] = await Promise.all([loadSortedRoles(), discord.getGuildTextChannels()]);
+  const [roles, channels, emojis] = await Promise.all([loadSortedRoles(), discord.getGuildTextChannels(), discord.getGuildEmojis()]);
   res.status(status || 200).render('settings', {
     active: 'settings',
     roles,
     channels,
+    emojis,
     access: store.readAccess(),
     saved: false,
     error: null,
@@ -67,6 +68,15 @@ router.post('/roles', requireAuth, requireAdmin, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+router.post('/roster-discord', requireAuth, requireAdmin, (req, res, next) => {
+  try {
+    const emojiKeys = ['squadLeader', 'infantry', 'armour', 'fob', 'mortar', 'pilot', 'recon', 'commander', 'pending', 'confirmed', 'declined'];
+    const rosterEmojiMap = Object.fromEntries(emojiKeys.map((key) => [key, req.body[`emoji_${key}`] || null]));
+    store.writeAccess({ ...store.readAccess(), rosterEmojiMap });
+    res.redirect('/settings?saved=1');
+  } catch (err) { next(err); }
 });
 
 router.post('/leaderboard/send', requireAuth, requireAdmin, async (req, res, next) => {

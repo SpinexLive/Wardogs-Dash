@@ -30,6 +30,6 @@ function normaliseRole(signup) { return roleMap[String(signup.cClassName || sign
 async function getRosterEvent(eventId) {
   const event = await request(`/events/${encodeURIComponent(eventId)}`);
   if (!isMatch(event)) throw new Error('This event is not an eligible match.');
-  return { ...formatEvent(event), players: (event.signUps || event.signups || []).filter(isRosterEligible).map((signup) => ({ id: String(signup.userId || signup.id), name: signup.name || 'Unknown player', role: normaliseRole(signup) })).filter((player) => player.role) };
+  return { ...formatEvent(event), channelId: String(event.channelId || event.channel?.id || event.channel_id || ''), players: (event.signUps || event.signups || []).filter(isRosterEligible).map((signup) => ({ id: String(signup.userId || signup.id), name: signup.name || 'Unknown player', role: normaliseRole(signup) })).filter((player) => player.role) };
 }
 module.exports = { getRosterEvents, getRosterEvent };

@@ -163,6 +163,17 @@
       </div>
     </section>
 
+    <section class="dashboard-panel settings-panel" style="margin-top: 12px">
+      <form method="POST" action="/settings/roster-discord">
+        <div class="panel-heading"><div><p class="eyebrow">Discord roster</p><h2>Roster sharing</h2></div></div>
+        <div class="settings-card-grid settings-card-grid--two"><div class="select-group settings-card"><p class="eyebrow">Event channel</p><p class="fine-print">Rosters are always posted to the same channel as the Raid-Helper event signup.</p></div><div class="select-group settings-card"><p class="eyebrow">Interactions</p><p class="fine-print">Set the Discord Interactions Endpoint URL to <code>/discord/interactions</code> on this dashboard domain, and add <code>DISCORD_PUBLIC_KEY</code> to .env.</p></div></div>
+        <div class="settings-card-grid">
+          <% const emojiLabels = { squadLeader: 'Squad Leader', infantry: 'Infantry', armour: 'Armour', fob: 'FOB', mortar: 'Mortar', pilot: 'Pilot', recon: 'Recon', commander: 'Commander', pending: 'Pending', confirmed: 'Confirmed', declined: 'Declined' }; Object.entries(emojiLabels).forEach(([key, label]) => { %><div class="select-group settings-card"><label for="emoji_<%= key %>"><%= label %> emoji</label><select id="emoji_<%= key %>" name="emoji_<%= key %>" class="role-select"><option value="">Default</option><% emojis.forEach((emoji) => { %><option value="<%= emoji.id %>" <%= access.rosterEmojiMap?.[key] === emoji.id ? 'selected' : '' %>><%= emoji.name %></option><% }) %></select></div><% }) %>
+        </div>
+        <div class="settings-actions"><button type="submit" class="btn-primary">Save Roster Discord Settings</button></div>
+      </form>
+    </section>
+
     <section class="dashboard-panel settings-hint">
       <p class="eyebrow">Next step</p><h2>Members</h2>
       <p class="muted">

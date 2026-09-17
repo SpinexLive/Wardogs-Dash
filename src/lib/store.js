@@ -18,6 +18,8 @@ function ensureStore(defaultAdminRoleIds) {
     cashTotalChannelId: null,
     cashTotalLastName: null,
     cashTotalNextUpdateAt: null,
+    rosterChannelId: null,
+    rosterEmojiMap: {},
   });
 }
 
@@ -36,6 +38,8 @@ function readAccess() {
     cashTotalChannelId: null,
     cashTotalLastName: null,
     cashTotalNextUpdateAt: null,
+    rosterChannelId: null,
+    rosterEmojiMap: {},
     ...data,
   };
 }

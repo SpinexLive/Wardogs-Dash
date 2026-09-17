@@ -95,6 +95,24 @@ async function getGuildTextChannels() {
   return (await res.json()).filter((channel) => channel.type === 0).sort((a, b) => a.position - b.position);
 }
 
+async function getGuildEmojis() {
+  const res = await fetch(`${API_BASE}/guilds/${config.DISCORD_GUILD_ID}/emojis`, { headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` } });
+  if (!res.ok) throw new Error(`Failed to fetch guild emojis: ${res.status}`);
+  return res.json();
+}
+
+async function createChannelMessage(channelId, payload) {
+  const res = await fetch(`${API_BASE}/channels/${channelId}/messages`, { method: 'POST', headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error(`Failed to send channel message: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function updateChannelMessage(channelId, messageId, payload) {
+  const res = await fetch(`${API_BASE}/channels/${channelId}/messages/${messageId}`, { method: 'PATCH', headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error(`Failed to update channel message: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 async function createLeaderboardMessage(channelId, payload) {
   const logo = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'images', 'wardogs-logo.png'));
   const form = new FormData();
@@ -149,6 +167,9 @@ module.exports = {
   getGuildMembers,
   getGuildInfo,
   getGuildTextChannels,
+  getGuildEmojis,
+  createChannelMessage,
+  updateChannelMessage,
   createLeaderboardMessage,
   updateLeaderboardMessage,
   renameChannel,

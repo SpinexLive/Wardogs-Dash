@@ -13,6 +13,13 @@
   const squadOrder = { commander: 0, armour: 1, pilot: 2, recon: 3, infantry: 4, fob: 5 };
   const state = { query: '', role: 'all', squads: [] };
   let draggedPlayer = null;
+  let hasUnsavedChanges = !savedRoster;
+  let isDiscordPosted = Boolean(match.discordPosted);
+  const saveButton = document.getElementById('save-roster');
+  const shareButton = Object.assign(document.createElement('button'), { id: 'share-roster', type: 'button', className: 'action-button', textContent: isDiscordPosted ? 'Update Discord' : 'Send to Discord' });
+  saveButton.before(shareButton);
+
+  function markDirty() { hasUnsavedChanges = true; }
 
   function fromSaved() {
     if (!savedRoster) return;
@@ -49,6 +56,7 @@
     const spec = templates[template];
     if (totalSlots() + spec.leaderSlots + spec.playerSlots + spec.fixedSlots > 33) return render();
     state.squads.push(normaliseSquad({ key: `${template}-${Date.now()}-${Math.random()}`, name: spec.label, template, leaderSlots: spec.leaderSlots, playerSlots: spec.playerSlots, fixedSlots: spec.fixedSlots, assignments: [] }));
+    markDirty();
     render();
   }
   function playerItem(player, compact = false, slotIcon = null) {
@@ -106,26 +114,33 @@
         const squad = state.squads.find((item) => item.key === zone.closest('[data-squad-key]').dataset.squadKey);
         unassign(draggedPlayer.id);
         squad.assignments[Number(zone.dataset.slot)] = draggedPlayer;
+        markDirty();
         render();
       });
     });
     document.querySelectorAll('.squad-slot-wrapper .roster-player').forEach((element) => {
-      element.addEventListener('dblclick', () => { unassign(element.dataset.playerId); render(); });
+      element.addEventListener('dblclick', () => { unassign(element.dataset.playerId); markDirty(); render(); });
     });
     const playerList = document.getElementById('player-list');
     playerList.addEventListener('dragover', (e) => e.preventDefault());
-    playerList.addEventListener('drop', (e) => { e.preventDefault(); if (draggedPlayer) { unassign(draggedPlayer.id); render(); } });
+    playerList.addEventListener('drop', (e) => { e.preventDefault(); if (draggedPlayer) { unassign(draggedPlayer.id); markDirty(); render(); } });
   }
   function render() { renderPlayers(); renderSquads(); renderCounter(); bindDrag(); }
   document.getElementById('event-time').textContent = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(match.startTime * 1000)) + ' (Europe/London)';
   document.getElementById('player-search').addEventListener('input', (e) => { state.query = e.target.value; renderPlayers(); bindDrag(); });
   document.getElementById('role-filter').addEventListener('click', (e) => { const button = e.target.closest('[data-role]'); if (!button) return; state.role = button.dataset.role; document.querySelectorAll('[data-role]').forEach((item) => item.classList.toggle('active', item === button)); renderPlayers(); bindDrag(); });
   document.getElementById('template-bar').addEventListener('click', (e) => { const button = e.target.closest('[data-template]'); if (button) addTemplate(button.dataset.template); });
-  document.getElementById('squad-list').addEventListener('input', (e) => { const index = Number(e.target.dataset.index); const squad = state.squads[index]; if (!squad) return; if (e.target.classList.contains('squad-name')) squad.name = e.target.value; if (e.target.dataset.field) { squad[e.target.dataset.field] = Math.max(0, Number(e.target.value)); normaliseSquad(squad); } render(); });
-  document.getElementById('squad-list').addEventListener('click', (e) => { const button = e.target.closest('.remove-squad'); if (button) { state.squads.splice(Number(button.dataset.index), 1); render(); } });
-  document.getElementById('save-roster').addEventListener('click', async () => {
+  document.getElementById('squad-list').addEventListener('input', (e) => { const index = Number(e.target.dataset.index); const squad = state.squads[index]; if (!squad) return; if (e.target.classList.contains('squad-name')) squad.name = e.target.value; if (e.target.dataset.field) { squad[e.target.dataset.field] = Math.max(0, Number(e.target.value)); normaliseSquad(squad); } markDirty(); render(); });
+  document.getElementById('squad-list').addEventListener('click', (e) => { const button = e.target.closest('.remove-squad'); if (button) { state.squads.splice(Number(button.dataset.index), 1); markDirty(); render(); } });
+  saveButton.addEventListener('click', async () => {
     const message = document.getElementById('roster-message'); message.hidden = true;
-    try { const response = await fetch(`/roster/${match.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: match, squads: state.squads.map((squad) => ({ ...squad, capacity: capacity(squad), assignments: squad.assignments.map((player, slot) => player && ({ ...player, slot })).filter(Boolean) })) }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save roster.'); message.textContent = 'Roster saved.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
+    try { const response = await fetch(`/roster/${match.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: match, squads: state.squads.map((squad) => ({ ...squad, capacity: capacity(squad), assignments: squad.assignments.map((player, slot) => player && ({ ...player, slot })).filter(Boolean) })) }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save roster.'); hasUnsavedChanges = false; message.textContent = 'Roster saved.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
+  });
+  shareButton.addEventListener('click', async () => {
+    const message = document.getElementById('roster-message');
+    if (hasUnsavedChanges) { message.className = 'error-banner'; message.textContent = 'Save your roster changes before sending or updating Discord.'; message.hidden = false; return; }
+    message.hidden = true;
+    try { const response = await fetch(`/roster/${match.id}/share`, { method: 'POST' }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Could not update Discord.'); isDiscordPosted = true; shareButton.textContent = 'Update Discord'; message.className = 'save-confirm'; message.textContent = 'Roster sent to Discord.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
   });
   fromSaved(); render();
 })();

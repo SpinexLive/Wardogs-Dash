@@ -32,6 +32,18 @@ db.exec(`
     UNIQUE(session_id, steam_id)
   );
   CREATE INDEX IF NOT EXISTS idx_match_player_stats_steam_id ON match_player_stats(steam_id);
+  CREATE TABLE IF NOT EXISTS roster_discord_messages (
+    event_id TEXT PRIMARY KEY REFERENCES rosters(event_id) ON DELETE CASCADE,
+    channel_id TEXT NOT NULL,
+    message_id TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS roster_confirmations (
+    event_id TEXT NOT NULL REFERENCES rosters(event_id) ON DELETE CASCADE,
+    player_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('pending', 'confirmed', 'declined')) DEFAULT 'pending',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(event_id, player_id)
+  );
 `);
 
 function getRoster(eventId) {
@@ -40,6 +52,12 @@ function getRoster(eventId) {
   roster.squads = db.prepare('SELECT * FROM squads WHERE event_id = ? ORDER BY position').all(eventId).map((squad) => ({ ...squad, assignments: db.prepare('SELECT * FROM roster_assignments WHERE squad_id = ? ORDER BY position').all(squad.id) }));
   return roster;
 }
+function getRosterDiscordMessage(eventId) { return db.prepare('SELECT * FROM roster_discord_messages WHERE event_id = ?').get(eventId) || null; }
+function setRosterDiscordMessage(eventId, channelId, messageId) { db.prepare('INSERT INTO roster_discord_messages (event_id, channel_id, message_id) VALUES (?, ?, ?) ON CONFLICT(event_id) DO UPDATE SET channel_id = excluded.channel_id, message_id = excluded.message_id').run(eventId, channelId, messageId); }
+function getRosterConfirmations(eventId) {
+  return new Map(db.prepare('SELECT player_id, status FROM roster_confirmations WHERE event_id = ?').all(eventId).map((row) => [row.player_id, row.status]));
+}
+function setRosterConfirmation(eventId, playerId, status) { db.prepare("INSERT INTO roster_confirmations (event_id, player_id, status) VALUES (?, ?, ?) ON CONFLICT(event_id, player_id) DO UPDATE SET status = excluded.status, updated_at = CURRENT_TIMESTAMP").run(eventId, playerId, status); }
 function hasRoster(eventId) { return Boolean(db.prepare('SELECT 1 FROM rosters WHERE event_id = ?').get(eventId)); }
 function deleteRoster(eventId) { db.prepare('DELETE FROM rosters WHERE event_id = ?').run(eventId); }
 const saveRoster = db.transaction((event, squads) => {
@@ -132,4 +150,4 @@ function getMatchStats(steamIds) {
   }]));
 }
 
-module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };
+module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, getRosterDiscordMessage, setRosterDiscordMessage, getRosterConfirmations, setRosterConfirmation, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };
