@@ -15,7 +15,7 @@ function formatPlaytime(minutes) {
   const days = Math.floor(total / 1440);
   const hours = Math.floor((total % 1440) / 60);
   const remainingMinutes = total % 60;
-  return `${days}d ${hours}h ${remainingMinutes}m`;
+  return days ? `${days}d ${hours}h ${remainingMinutes}m` : `${hours}h ${remainingMinutes}m`;
 }
 
 function discordAvatarUrl(user) {
