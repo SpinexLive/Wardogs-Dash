@@ -617,7 +617,9 @@ body.fixed-viewport .page--fill { height: 100vh; }
 .header-actions { justify-content: flex-end; }
 .header-actions form { margin: 0; }
 .action-button { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 15px; border: 1px solid var(--border); color: var(--text); font-size: 13px; font-weight: 800; }
+.action-button:is(button, input) { appearance: none; background: #211416; color: #ffe5e5; cursor: pointer; font: inherit; }
 .action-button:hover { border-color: var(--text); }
+.action-button:is(button, input):hover { background: #321719; border-color: #c43b3f; color: #fff; }
 .action-button--primary { background: var(--accent); border-color: var(--accent); color: #fff; cursor: pointer; }
 .action-button--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
