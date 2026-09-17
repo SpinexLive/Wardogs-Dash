@@ -52,7 +52,7 @@ const saveRoster = db.transaction((event, squads) => {
   db.prepare('DELETE FROM squads WHERE event_id = ?').run(event.id);
   const addSquad = db.prepare('INSERT INTO squads (event_id, position, name, template, leader_slots, player_slots, fixed_slots) VALUES (?, ?, ?, ?, ?, ?, ?)');
   const addPlayer = db.prepare('INSERT INTO roster_assignments (squad_id, player_id, player_name, player_role, position) VALUES (?, ?, ?, ?, ?)');
-  squads.forEach((squad, position) => { const result = addSquad.run(event.id, position, squad.name, squad.template, squad.leaderSlots || 0, squad.playerSlots || 0, squad.fixedSlots || 0); (squad.assignments || []).forEach((player, playerPosition) => addPlayer.run(result.lastInsertRowid, player.id, player.name, player.role, playerPosition)); });
+  squads.forEach((squad, position) => { const result = addSquad.run(event.id, position, squad.name, squad.template, squad.leaderSlots || 0, squad.playerSlots || 0, squad.fixedSlots || 0); (squad.assignments || []).forEach((player, playerPosition) => addPlayer.run(result.lastInsertRowid, player.id, player.name, player.role, Number.isInteger(player.slot) ? player.slot : playerPosition)); });
 });
 const recordCashSnapshot = db.transaction((players) => {
   const find = db.prepare('SELECT current_cash FROM player_cash_tracking WHERE steam_id = ?');

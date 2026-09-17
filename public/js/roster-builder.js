@@ -3,7 +3,7 @@
   const templates = {
     infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png', showLeaderControl: true, showPlayerControl: true },
     armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1, playerMax: 2 },
-    fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1 },
+    fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1, showMortarControl: true, mortarMin: 1, mortarMax: 33 },
     pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png', showLeaderControl: false, showPlayerControl: true },
     commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png', showLeaderControl: false, showPlayerControl: false },
   };
@@ -14,10 +14,17 @@
 
   function fromSaved() {
     if (!savedRoster) return;
-    state.squads = savedRoster.squads.map((squad, index) => normaliseSquad({
-      key: `saved-${squad.id}-${index}`, name: squad.name, template: squad.template, leaderSlots: squad.leader_slots, playerSlots: squad.player_slots, fixedSlots: squad.fixed_slots,
-      assignments: squad.assignments.map((assignment) => match.players.find((player) => player.id === assignment.player_id) || { id: assignment.player_id, name: assignment.player_name, role: assignment.player_role }),
-    }));
+    state.squads = savedRoster.squads.map((savedSquad, index) => {
+      const squad = normaliseSquad({
+        key: `saved-${savedSquad.id}-${index}`, name: savedSquad.name, template: savedSquad.template, leaderSlots: savedSquad.leader_slots, playerSlots: savedSquad.player_slots, fixedSlots: savedSquad.fixed_slots, assignments: [],
+      });
+      squad.assignments = Array(capacity(squad)).fill(null);
+      savedSquad.assignments.forEach((assignment, position) => {
+        const slot = Number.isInteger(assignment.position) ? assignment.position : position;
+        if (slot < capacity(squad)) squad.assignments[slot] = match.players.find((player) => player.id === assignment.player_id) || { id: assignment.player_id, name: assignment.player_name, role: assignment.player_role };
+      });
+      return squad;
+    });
   }
   function normaliseSquad(squad) {
     const spec = templates[squad.template];
@@ -26,14 +33,16 @@
     if (!spec.showPlayerControl) squad.playerSlots = spec.playerSlots;
     if (spec.playerMin !== undefined) squad.playerSlots = Math.max(spec.playerMin, Number(squad.playerSlots) || spec.playerMin);
     if (spec.playerMax !== undefined) squad.playerSlots = Math.min(spec.playerMax, Number(squad.playerSlots) || spec.playerMax);
-    squad.fixedSlots = spec.fixedSlots;
+    if (!spec.showMortarControl) squad.fixedSlots = spec.fixedSlots;
+    if (spec.mortarMin !== undefined) squad.fixedSlots = Math.max(spec.mortarMin, Number(squad.fixedSlots) || spec.mortarMin);
+    if (spec.mortarMax !== undefined) squad.fixedSlots = Math.min(spec.mortarMax, Number(squad.fixedSlots) || spec.mortarMax);
     squad.assignments = (squad.assignments || []).slice(0, capacity(squad));
     return squad;
   }
   function capacity(squad) { return Number(squad.leaderSlots) + Number(squad.playerSlots) + Number(squad.fixedSlots); }
   function totalSlots() { return state.squads.reduce((total, squad) => total + capacity(squad), 0); }
-  function assigned() { return state.squads.reduce((total, squad) => total + squad.assignments.length, 0); }
-  function unassign(playerId) { state.squads.forEach((squad) => { squad.assignments = squad.assignments.filter((player) => player.id !== playerId); }); }
+  function assigned() { return state.squads.reduce((total, squad) => total + squad.assignments.filter(Boolean).length, 0); }
+  function unassign(playerId) { state.squads.forEach((squad) => { squad.assignments = squad.assignments.map((player) => player?.id === playerId ? null : player); }); }
   function addTemplate(template) {
     const spec = templates[template];
     if (totalSlots() + spec.leaderSlots + spec.playerSlots + spec.fixedSlots > 33) return render();
@@ -46,7 +55,7 @@
   }
   function escapeHtml(value) { const node = document.createElement('div'); node.textContent = value; return node.innerHTML; }
   function renderPlayers() {
-    const assignedIds = new Set(state.squads.flatMap((squad) => squad.assignments.map((player) => player.id)));
+    const assignedIds = new Set(state.squads.flatMap((squad) => squad.assignments.filter(Boolean).map((player) => player.id)));
     const players = match.players.filter((player) => (state.role === 'all' || player.role === state.role) && player.name.toLowerCase().includes(state.query.toLowerCase()));
     document.getElementById('player-list').innerHTML = players.map((player) => `<div class="${assignedIds.has(player.id) ? 'is-assigned' : ''}">${playerItem(player)}${assignedIds.has(player.id) ? '<em>Assigned</em>' : ''}</div>`).join('') || '<p class="empty-state">No players match.</p>';
   }
@@ -57,12 +66,13 @@
       if (squad.template === 'fob' && slot >= squad.leaderSlots + squad.playerSlots) return '/images/artillery.png';
       return squad.template === 'commander' ? roleIcons.commander : spec.icon;
     };
-    const slots = Array.from({ length: capacity(squad) }, (_, slot) => squad.assignments[slot]
+    const slots = Array.from({ length: capacity(squad) }, (_, slot) => `<div class="squad-slot-wrapper ${squad.assignments[slot] ? 'is-filled' : ''}" data-slot="${slot}">${squad.assignments[slot]
       ? playerItem(squad.assignments[slot], true, slotIcon(slot))
-      : `<div class="squad-slot" data-slot="${slot}"><img src="${slotIcon(slot)}" alt="" /><span>Drop player here</span></div>`).join('');
+      : `<div class="squad-slot"><img src="${slotIcon(slot)}" alt="" /><span>Drop player here</span></div>`}</div>`).join('');
     const controls = [
       spec.showLeaderControl ? `<label>Squad Leaders<input type="number" min="0" max="33" value="${squad.leaderSlots}" data-field="leaderSlots" data-index="${index}" /></label>` : '',
       spec.showPlayerControl ? `<label>Players<input type="number" min="${spec.playerMin ?? 0}" max="${spec.playerMax ?? 33}" value="${squad.playerSlots}" data-field="playerSlots" data-index="${index}" /></label>` : '',
+      spec.showMortarControl ? `<label>Mortars<input type="number" min="${spec.mortarMin}" max="${spec.mortarMax}" value="${squad.fixedSlots}" data-field="fixedSlots" data-index="${index}" /></label>` : '',
     ].join('');
     const controlsMarkup = controls ? `<div class="squad-controls">${controls}<span>${capacity(squad)} slots</span></div>` : `<div class="squad-controls squad-controls--fixed"><span>${capacity(squad)} slot${capacity(squad) === 1 ? '' : 's'}</span></div>`;
     return `<article class="squad-card" data-squad-key="${squad.key}"><header><img src="${spec.icon}" alt="" /><input class="squad-name" value="${escapeHtml(squad.name)}" data-index="${index}" aria-label="Squad name" /><button class="remove-squad" data-index="${index}" aria-label="Remove squad">×</button></header>${controlsMarkup}<div class="squad-slot-list" data-drop-squad="${squad.key}">${slots}</div></article>`;
@@ -80,10 +90,19 @@
       element.addEventListener('dragstart', () => { draggedPlayer = match.players.find((player) => player.id === element.dataset.playerId); element.classList.add('is-dragging'); });
       element.addEventListener('dragend', () => element.classList.remove('is-dragging'));
     });
-    document.querySelectorAll('[data-drop-squad]').forEach((zone) => {
+    document.querySelectorAll('.squad-slot-wrapper').forEach((zone) => {
       zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-drop-target'); });
       zone.addEventListener('dragleave', () => zone.classList.remove('is-drop-target'));
-      zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('is-drop-target'); if (!draggedPlayer) return; const squad = state.squads.find((item) => item.key === zone.dataset.dropSquad); const target = e.target.closest('[data-slot], .roster-player'); const index = target?.dataset.slot !== undefined ? Number(target.dataset.slot) : squad.assignments.findIndex((item) => item.id === target?.dataset.playerId); if (squad.assignments.length >= capacity(squad) && index < 0) return; unassign(draggedPlayer.id); squad.assignments.splice(index < 0 ? squad.assignments.length : index, 0, draggedPlayer); squad.assignments = squad.assignments.slice(0, capacity(squad)); render(); });
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault(); zone.classList.remove('is-drop-target'); if (!draggedPlayer) return;
+        const squad = state.squads.find((item) => item.key === zone.closest('[data-squad-key]').dataset.squadKey);
+        unassign(draggedPlayer.id);
+        squad.assignments[Number(zone.dataset.slot)] = draggedPlayer;
+        render();
+      });
+    });
+    document.querySelectorAll('.squad-slot-wrapper .roster-player').forEach((element) => {
+      element.addEventListener('dblclick', () => { unassign(element.dataset.playerId); render(); });
     });
     const playerList = document.getElementById('player-list');
     playerList.addEventListener('dragover', (e) => e.preventDefault());
@@ -98,7 +117,7 @@
   document.getElementById('squad-list').addEventListener('click', (e) => { const button = e.target.closest('.remove-squad'); if (button) { state.squads.splice(Number(button.dataset.index), 1); render(); } });
   document.getElementById('save-roster').addEventListener('click', async () => {
     const message = document.getElementById('roster-message'); message.hidden = true;
-    try { const response = await fetch(`/roster/${match.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: match, squads: state.squads.map((squad) => ({ ...squad, capacity: capacity(squad) })) }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save roster.'); message.textContent = 'Roster saved.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
+    try { const response = await fetch(`/roster/${match.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: match, squads: state.squads.map((squad) => ({ ...squad, capacity: capacity(squad), assignments: squad.assignments.map((player, slot) => player && ({ ...player, slot })).filter(Boolean) })) }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save roster.'); message.textContent = 'Roster saved.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
   });
   fromSaved(); render();
 })();
