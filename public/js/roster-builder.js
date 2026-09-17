@@ -1,22 +1,35 @@
 (() => {
   const { event: match, savedRoster } = window.rosterBootstrap;
   const templates = {
-    infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png' },
-    armour: { label: 'Armour Crew', leaderSlots: 0, playerSlots: 2, fixedSlots: 0, icon: '/images/armour.png' },
-    fob: { label: 'FOB Team', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/FOB.png' },
-    pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png' },
-    commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png' },
+    infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png', showLeaderControl: true, showPlayerControl: true },
+    armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1, playerMax: 2 },
+    fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true },
+    mortar: { label: 'Mortar Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/artillery.png', showLeaderControl: false, showPlayerControl: true },
+    pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png', showLeaderControl: false, showPlayerControl: true },
+    commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png', showLeaderControl: false, showPlayerControl: false },
   };
   const roleIcons = { infantry: '/images/infantry.png', armour: '/images/armour.png', fob: '/images/FOB.png', pilot: '/images/pilot.png', commander: '/images/wardogs.png' };
+  const squadLeaderIcon = '/images/squad leader.png';
   const state = { query: '', role: 'all', squads: [] };
   let draggedPlayer = null;
 
   function fromSaved() {
     if (!savedRoster) return;
-    state.squads = savedRoster.squads.map((squad, index) => ({
+    state.squads = savedRoster.squads.map((squad, index) => normaliseSquad({
       key: `saved-${squad.id}-${index}`, name: squad.name, template: squad.template, leaderSlots: squad.leader_slots, playerSlots: squad.player_slots, fixedSlots: squad.fixed_slots,
       assignments: squad.assignments.map((assignment) => match.players.find((player) => player.id === assignment.player_id) || { id: assignment.player_id, name: assignment.player_name, role: assignment.player_role }),
     }));
+  }
+  function normaliseSquad(squad) {
+    const spec = templates[squad.template];
+    if (!spec) return squad;
+    if (!spec.showLeaderControl) squad.leaderSlots = spec.leaderSlots;
+    if (!spec.showPlayerControl) squad.playerSlots = spec.playerSlots;
+    if (spec.playerMin !== undefined) squad.playerSlots = Math.max(spec.playerMin, Number(squad.playerSlots) || spec.playerMin);
+    if (spec.playerMax !== undefined) squad.playerSlots = Math.min(spec.playerMax, Number(squad.playerSlots) || spec.playerMax);
+    squad.fixedSlots = spec.fixedSlots;
+    squad.assignments = (squad.assignments || []).slice(0, capacity(squad));
+    return squad;
   }
   function capacity(squad) { return Number(squad.leaderSlots) + Number(squad.playerSlots) + Number(squad.fixedSlots); }
   function totalSlots() { return state.squads.reduce((total, squad) => total + capacity(squad), 0); }
@@ -25,11 +38,12 @@
   function addTemplate(template) {
     const spec = templates[template];
     if (totalSlots() + spec.leaderSlots + spec.playerSlots + spec.fixedSlots > 33) return render();
-    state.squads.push({ key: `${template}-${Date.now()}-${Math.random()}`, name: spec.label, template, leaderSlots: spec.leaderSlots, playerSlots: spec.playerSlots, fixedSlots: spec.fixedSlots, assignments: [] });
+    state.squads.push(normaliseSquad({ key: `${template}-${Date.now()}-${Math.random()}`, name: spec.label, template, leaderSlots: spec.leaderSlots, playerSlots: spec.playerSlots, fixedSlots: spec.fixedSlots, assignments: [] }));
     render();
   }
-  function playerItem(player, compact = false) {
-    return `<div class="roster-player ${compact ? 'roster-player--compact' : ''}" draggable="true" data-player-id="${player.id}"><img src="${roleIcons[player.role]}" alt="" /><span>${escapeHtml(player.name)}</span><small>${player.role}</small><b aria-hidden="true">⠿</b></div>`;
+  function playerItem(player, compact = false, slotIcon = null) {
+    const icon = slotIcon || roleIcons[player.role] || roleIcons.infantry;
+    return `<div class="roster-player ${compact ? 'roster-player--compact' : ''}" draggable="true" data-player-id="${player.id}"><img src="${icon}" alt="" /><span>${escapeHtml(player.name)}</span><small>${player.role}</small><b aria-hidden="true">⠿</b></div>`;
   }
   function escapeHtml(value) { const node = document.createElement('div'); node.textContent = value; return node.innerHTML; }
   function renderPlayers() {
@@ -39,9 +53,16 @@
   }
   function squadCard(squad, index) {
     const spec = templates[squad.template];
-    const slots = Array.from({ length: capacity(squad) }, (_, slot) => squad.assignments[slot] ? playerItem(squad.assignments[slot], true) : `<div class="squad-slot" data-slot="${slot}">Drop player here</div>`).join('');
-    const editable = squad.template !== 'commander';
-    return `<article class="squad-card" data-squad-key="${squad.key}"><header><img src="${spec.icon}" alt="" /><input class="squad-name" value="${escapeHtml(squad.name)}" data-index="${index}" aria-label="Squad name" /><button class="remove-squad" data-index="${index}" aria-label="Remove squad">×</button></header><div class="squad-controls"><label>Squad Leaders<input type="number" min="0" max="33" value="${squad.leaderSlots}" data-field="leaderSlots" data-index="${index}" ${editable ? '' : 'disabled'} /></label><label>Players<input type="number" min="0" max="33" value="${squad.playerSlots}" data-field="playerSlots" data-index="${index}" ${editable ? '' : 'disabled'} /></label><span>${capacity(squad)} slots</span></div><div class="squad-slot-list" data-drop-squad="${squad.key}">${slots}</div></article>`;
+    const slotIcon = (slot) => slot < squad.leaderSlots ? squadLeaderIcon : (squad.template === 'commander' ? roleIcons.commander : spec.icon);
+    const slots = Array.from({ length: capacity(squad) }, (_, slot) => squad.assignments[slot]
+      ? playerItem(squad.assignments[slot], true, slotIcon(slot))
+      : `<div class="squad-slot" data-slot="${slot}"><img src="${slotIcon(slot)}" alt="" /><span>Drop player here</span></div>`).join('');
+    const controls = [
+      spec.showLeaderControl ? `<label>Squad Leaders<input type="number" min="0" max="33" value="${squad.leaderSlots}" data-field="leaderSlots" data-index="${index}" /></label>` : '',
+      spec.showPlayerControl ? `<label>Players<input type="number" min="${spec.playerMin ?? 0}" max="${spec.playerMax ?? 33}" value="${squad.playerSlots}" data-field="playerSlots" data-index="${index}" /></label>` : '',
+    ].join('');
+    const controlsMarkup = controls ? `<div class="squad-controls">${controls}<span>${capacity(squad)} slots</span></div>` : `<div class="squad-controls squad-controls--fixed"><span>${capacity(squad)} slot${capacity(squad) === 1 ? '' : 's'}</span></div>`;
+    return `<article class="squad-card" data-squad-key="${squad.key}"><header><img src="${spec.icon}" alt="" /><input class="squad-name" value="${escapeHtml(squad.name)}" data-index="${index}" aria-label="Squad name" /><button class="remove-squad" data-index="${index}" aria-label="Remove squad">×</button></header>${controlsMarkup}<div class="squad-slot-list" data-drop-squad="${squad.key}">${slots}</div></article>`;
   }
   function renderSquads() { document.getElementById('squad-list').innerHTML = state.squads.map(squadCard).join('') || '<p class="empty-state">Choose a template to add your first squad.</p>'; }
   function renderCounter() {
@@ -70,7 +91,7 @@
   document.getElementById('player-search').addEventListener('input', (e) => { state.query = e.target.value; renderPlayers(); bindDrag(); });
   document.getElementById('role-filter').addEventListener('click', (e) => { const button = e.target.closest('[data-role]'); if (!button) return; state.role = button.dataset.role; document.querySelectorAll('[data-role]').forEach((item) => item.classList.toggle('active', item === button)); renderPlayers(); bindDrag(); });
   document.getElementById('template-bar').addEventListener('click', (e) => { const button = e.target.closest('[data-template]'); if (button) addTemplate(button.dataset.template); });
-  document.getElementById('squad-list').addEventListener('input', (e) => { const index = Number(e.target.dataset.index); const squad = state.squads[index]; if (!squad) return; if (e.target.classList.contains('squad-name')) squad.name = e.target.value; if (e.target.dataset.field) { squad[e.target.dataset.field] = Math.max(0, Number(e.target.value)); squad.assignments = squad.assignments.slice(0, capacity(squad)); } render(); });
+  document.getElementById('squad-list').addEventListener('input', (e) => { const index = Number(e.target.dataset.index); const squad = state.squads[index]; if (!squad) return; if (e.target.classList.contains('squad-name')) squad.name = e.target.value; if (e.target.dataset.field) { squad[e.target.dataset.field] = Math.max(0, Number(e.target.value)); normaliseSquad(squad); } render(); });
   document.getElementById('squad-list').addEventListener('click', (e) => { const button = e.target.closest('.remove-squad'); if (button) { state.squads.splice(Number(button.dataset.index), 1); render(); } });
   document.getElementById('save-roster').addEventListener('click', async () => {
     const message = document.getElementById('roster-message'); message.hidden = true;
