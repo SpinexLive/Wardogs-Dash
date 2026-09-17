@@ -17,7 +17,8 @@
   let isDiscordPosted = Boolean(match.discordPosted);
   const saveButton = document.getElementById('save-roster');
   const shareButton = Object.assign(document.createElement('button'), { id: 'share-roster', type: 'button', className: 'action-button', textContent: isDiscordPosted ? 'Update Discord' : 'Send to Discord' });
-  saveButton.before(shareButton);
+  const remindButton = Object.assign(document.createElement('button'), { id: 'remind-pending', type: 'button', className: 'action-button', textContent: 'Remind Pending' });
+  saveButton.before(shareButton, remindButton);
 
   function markDirty() { hasUnsavedChanges = true; }
 
@@ -137,13 +138,19 @@
   document.getElementById('squad-list').addEventListener('click', (e) => { const button = e.target.closest('.remove-squad'); if (button) { state.squads.splice(Number(button.dataset.index), 1); markDirty(); render(); } });
   saveButton.addEventListener('click', async () => {
     const message = document.getElementById('roster-message'); message.hidden = true;
-    try { const response = await fetch(`/roster/${match.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: match, squads: state.squads.map((squad) => ({ ...squad, capacity: capacity(squad), assignments: squad.assignments.map((player, slot) => player && ({ ...player, slot })).filter(Boolean) })) }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save roster.'); hasUnsavedChanges = false; message.textContent = 'Roster saved.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
+    try { const response = await fetch(`/roster/${match.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: match, squads: state.squads.map((squad) => ({ ...squad, capacity: capacity(squad), assignments: squad.assignments.map((player, slot) => player && ({ ...player, slot })).filter(Boolean) })) }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not save roster.'); (data.resetConfirmations || []).forEach((playerId) => { const player = match.players.find((item) => item.id === playerId); if (player) player.confirmation = 'pending'; }); hasUnsavedChanges = false; render(); message.textContent = 'Roster saved.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
   });
   shareButton.addEventListener('click', async () => {
     const message = document.getElementById('roster-message');
     if (hasUnsavedChanges) { message.className = 'error-banner'; message.textContent = 'Save your roster changes before sending or updating Discord.'; message.hidden = false; return; }
     message.hidden = true;
     try { const response = await fetch(`/roster/${match.id}/share`, { method: 'POST' }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Could not update Discord.'); isDiscordPosted = true; shareButton.textContent = 'Update Discord'; message.className = 'save-confirm'; message.textContent = 'Roster sent to Discord.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
+  });
+  remindButton.addEventListener('click', async () => {
+    const message = document.getElementById('roster-message');
+    if (hasUnsavedChanges) { message.className = 'error-banner'; message.textContent = 'Save your roster changes before sending a reminder.'; message.hidden = false; return; }
+    message.hidden = true;
+    try { const response = await fetch(`/roster/${match.id}/remind-pending`, { method: 'POST' }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Could not send pending-member reminder.'); message.className = 'save-confirm'; message.textContent = 'Pending members have been reminded.'; message.hidden = false; } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
   });
   fromSaved(); render();
 })();

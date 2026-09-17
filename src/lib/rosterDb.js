@@ -37,6 +37,11 @@ db.exec(`
     channel_id TEXT NOT NULL,
     message_id TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS roster_discord_reminders (
+    event_id TEXT PRIMARY KEY REFERENCES rosters(event_id) ON DELETE CASCADE,
+    channel_id TEXT NOT NULL,
+    message_id TEXT NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS roster_confirmations (
     event_id TEXT NOT NULL REFERENCES rosters(event_id) ON DELETE CASCADE,
     player_id TEXT NOT NULL,
@@ -54,6 +59,8 @@ function getRoster(eventId) {
 }
 function getRosterDiscordMessage(eventId) { return db.prepare('SELECT * FROM roster_discord_messages WHERE event_id = ?').get(eventId) || null; }
 function setRosterDiscordMessage(eventId, channelId, messageId) { db.prepare('INSERT INTO roster_discord_messages (event_id, channel_id, message_id) VALUES (?, ?, ?) ON CONFLICT(event_id) DO UPDATE SET channel_id = excluded.channel_id, message_id = excluded.message_id').run(eventId, channelId, messageId); }
+function getRosterDiscordReminder(eventId) { return db.prepare('SELECT * FROM roster_discord_reminders WHERE event_id = ?').get(eventId) || null; }
+function setRosterDiscordReminder(eventId, channelId, messageId) { db.prepare('INSERT INTO roster_discord_reminders (event_id, channel_id, message_id) VALUES (?, ?, ?) ON CONFLICT(event_id) DO UPDATE SET channel_id = excluded.channel_id, message_id = excluded.message_id').run(eventId, channelId, messageId); }
 function getRosterConfirmations(eventId) {
   return new Map(db.prepare('SELECT player_id, status FROM roster_confirmations WHERE event_id = ?').all(eventId).map((row) => [row.player_id, row.status]));
 }
@@ -66,11 +73,23 @@ const saveRoster = db.transaction((event, squads) => {
   if (totalSlots > 33 || assigned > 33) throw new Error('A roster cannot exceed 33 player slots.');
   const ids = squads.flatMap((squad) => (squad.assignments || []).map((player) => player.id));
   if (new Set(ids).size !== ids.length) throw new Error('A player can only be assigned once.');
+  const previousPositions = new Map(db.prepare(`SELECT assignments.player_id, squads.position AS squad_position, squads.template, assignments.position AS slot_position FROM roster_assignments AS assignments INNER JOIN squads ON squads.id = assignments.squad_id WHERE squads.event_id = ?`).all(event.id).map((row) => [row.player_id, `${row.template}:${row.squad_position}:${row.slot_position}`]));
+  const resetConfirmation = db.prepare("INSERT INTO roster_confirmations (event_id, player_id, status) VALUES (?, ?, 'pending') ON CONFLICT(event_id, player_id) DO UPDATE SET status = 'pending', updated_at = CURRENT_TIMESTAMP");
+  const resetConfirmations = [];
+  squads.forEach((squad, squadPosition) => (squad.assignments || []).forEach((player, playerPosition) => {
+    const slotPosition = Number.isInteger(player.slot) ? player.slot : playerPosition;
+    const previous = previousPositions.get(player.id);
+    if (previous && previous !== `${squad.template}:${squadPosition}:${slotPosition}`) {
+      resetConfirmation.run(event.id, player.id);
+      resetConfirmations.push(player.id);
+    }
+  }));
   db.prepare('INSERT INTO rosters (event_id, event_name, event_start) VALUES (?, ?, ?) ON CONFLICT(event_id) DO UPDATE SET event_name = excluded.event_name, event_start = excluded.event_start, updated_at = CURRENT_TIMESTAMP').run(event.id, event.name, event.startTime || null);
   db.prepare('DELETE FROM squads WHERE event_id = ?').run(event.id);
   const addSquad = db.prepare('INSERT INTO squads (event_id, position, name, template, leader_slots, player_slots, fixed_slots) VALUES (?, ?, ?, ?, ?, ?, ?)');
   const addPlayer = db.prepare('INSERT INTO roster_assignments (squad_id, player_id, player_name, player_role, position) VALUES (?, ?, ?, ?, ?)');
   squads.forEach((squad, position) => { const result = addSquad.run(event.id, position, squad.name, squad.template, squad.leaderSlots || 0, squad.playerSlots || 0, squad.fixedSlots || 0); (squad.assignments || []).forEach((player, playerPosition) => addPlayer.run(result.lastInsertRowid, player.id, player.name, player.role, Number.isInteger(player.slot) ? player.slot : playerPosition)); });
+  return resetConfirmations;
 });
 const recordCashSnapshot = db.transaction((players) => {
   const find = db.prepare('SELECT current_cash FROM player_cash_tracking WHERE steam_id = ?');
@@ -150,4 +169,4 @@ function getMatchStats(steamIds) {
   }]));
 }
 
-module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, getRosterDiscordMessage, setRosterDiscordMessage, getRosterConfirmations, setRosterConfirmation, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };
+module.exports = { getRoster, hasRoster, saveRoster, deleteRoster, getRosterDiscordMessage, setRosterDiscordMessage, getRosterDiscordReminder, setRosterDiscordReminder, getRosterConfirmations, setRosterConfirmation, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };

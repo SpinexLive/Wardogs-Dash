@@ -113,6 +113,13 @@ async function updateChannelMessage(channelId, messageId, payload) {
   return res.json();
 }
 
+async function deleteChannelMessage(channelId, messageId) {
+  const res = await fetch(`${API_BASE}/channels/${channelId}/messages/${messageId}`, {
+    method: 'DELETE', headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` },
+  });
+  if (!res.ok && res.status !== 404) throw new Error(`Failed to delete channel message: ${res.status} ${await res.text()}`);
+}
+
 async function createLeaderboardMessage(channelId, payload) {
   const logo = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'images', 'wardogs-logo.png'));
   const form = new FormData();
@@ -170,6 +177,7 @@ module.exports = {
   getGuildEmojis,
   createChannelMessage,
   updateChannelMessage,
+  deleteChannelMessage,
   createLeaderboardMessage,
   updateLeaderboardMessage,
   renameChannel,

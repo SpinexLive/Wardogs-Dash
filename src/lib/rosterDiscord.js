@@ -7,6 +7,12 @@ const templateIconKey = { infantry: 'infantry', armour: 'armour', fob: 'fob', pi
 
 function emojiMarkup(emoji, fallback) { return emoji ? `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>` : fallback; }
 function escapeEmbed(value) { return String(value || '').replace(/([*_`~|>])/g, '\\$1'); }
+function rosterButtons(eventId) {
+  return [{ type: 1, components: [
+    { type: 2, style: 3, label: 'Confirm', custom_id: `WD-confirm:${eventId}` },
+    { type: 2, style: 4, label: 'Decline', custom_id: `WD-Decline:${eventId}` },
+  ] }];
+}
 
 async function buildPayload(eventId, { mentionAssigned = false } = {}) {
   const roster = rosterDb.getRoster(eventId);
@@ -32,10 +38,7 @@ async function buildPayload(eventId, { mentionAssigned = false } = {}) {
     // Explicitly allow only rostered Discord users; roles and @everyone cannot be pinged.
     allowed_mentions: { parse: [], users: mentionAssigned ? assignedMemberIds : [] },
     embeds: [{ color: 0xa61b1b, title: roster.event_name, thumbnail: { url: 'https://45-151-81-182.sslip.io/images/wardogs-logo.png' }, description: start ? `<t:${start}:F>\n📣 https://ptb.discord.com/channels/1332320879073296404/1546197103498363031` : 'Start time pending.', fields, footer: { text: '• Please confirm you attendance' } }],
-    components: [{ type: 1, components: [
-      { type: 2, style: 3, label: 'Confirm', custom_id: `WD-confirm:${eventId}` },
-      { type: 2, style: 4, label: 'Decline', custom_id: `WD-Decline:${eventId}` },
-    ] }],
+    components: rosterButtons(eventId),
   };
   if (mentionAssigned && assignedMemberIds.length) payload.content = `${assignedMemberIds.map((id) => `<@${id}>`).join(' ')}`;
   return payload;
@@ -53,6 +56,26 @@ async function publishRoster(eventId, channelId) {
   return message;
 }
 
+async function sendPendingReminder(eventId, channelId) {
+  if (!channelId) throw new Error('Raid-Helper did not return the event signup channel.');
+  const roster = rosterDb.getRoster(eventId);
+  if (!roster) throw new Error('Save the roster before sending a reminder.');
+  const confirmations = rosterDb.getRosterConfirmations(eventId);
+  const pendingMemberIds = [...new Set(roster.squads.flatMap((squad) => squad.assignments.map((player) => String(player.player_id))).filter((id) => /^\d{17,20}$/.test(id) && (confirmations.get(id) || 'pending') === 'pending'))];
+  if (!pendingMemberIds.length) throw new Error('There are no pending roster members to remind.');
+
+  const previousReminder = rosterDb.getRosterDiscordReminder(eventId);
+  if (previousReminder) await discord.deleteChannelMessage(previousReminder.channel_id, previousReminder.message_id);
+
+  const message = await discord.createChannelMessage(channelId, {
+    content: `📣 Roster reminder: ${pendingMemberIds.map((id) => `<@${id}>`).join(' ')}\nPlease confirm or decline your roster place below.`,
+    allowed_mentions: { parse: [], users: pendingMemberIds },
+    components: rosterButtons(eventId),
+  });
+  rosterDb.setRosterDiscordReminder(eventId, channelId, message.id);
+  return message;
+}
+
 async function respondToRosterButton(eventId, playerId, status) {
   const roster = rosterDb.getRoster(eventId);
   const assigned = roster?.squads.some((squad) => squad.assignments.some((player) => player.player_id === playerId));
@@ -63,4 +86,4 @@ async function respondToRosterButton(eventId, playerId, status) {
   return { ok: true, message: status === 'confirmed' ? 'You are confirmed.' : 'You have declined.' };
 }
 
-module.exports = { publishRoster, respondToRosterButton };
+module.exports = { publishRoster, sendPendingReminder, respondToRosterButton };

@@ -678,6 +678,7 @@ body.fixed-viewport .page--fill { height: 100vh; }
 /* Roster cards: condensed command-board styling for fast assignment scanning. */
 .roster-builder-page .player-column, .roster-builder-page .squad-column { background: linear-gradient(145deg, #1a1a1d 0%, #111113 100%); }
 .roster-builder-page #share-roster { border-color: #6f2a2d; background: #211416; color: #ffe5e5; cursor: pointer; font: inherit; }.roster-builder-page #share-roster:hover { border-color: #c43b3f; background: #321719; color: #fff; }
+.roster-builder-page #remind-pending { border-color: #665323; background: #211d12; color: #ffe9a6; cursor: pointer; font: inherit; }.roster-builder-page #remind-pending:hover { border-color: #d4b106; background: #302813; color: #fff; }
 .roster-builder-page .player-column { border-top: 3px solid #7d181b; }
 .roster-builder-page .squad-column { border-top: 3px solid var(--accent); }
 .player-list .roster-player { grid-template-columns: 28px minmax(0, 1fr) 12px; min-height: 52px; padding: 8px 9px; border-left: 3px solid #3c1517; background: linear-gradient(100deg, rgba(143,28,28,.14), #171719 38%); box-shadow: inset 0 1px 0 rgba(255,255,255,.025); }
