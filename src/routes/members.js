@@ -10,6 +10,14 @@ const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 const router = express.Router();
 const MAX_STEAM_ID_LENGTH = 64;
 
+function formatPlaytime(minutes) {
+  const total = Math.max(0, Math.floor(Number(minutes) || 0));
+  const days = Math.floor(total / 1440);
+  const hours = Math.floor((total % 1440) / 60);
+  const remainingMinutes = total % 60;
+  return `${days}d ${hours}h ${remainingMinutes}m`;
+}
+
 function discordAvatarUrl(user) {
   if (user.avatar) return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=64`;
   // Discord's fallback avatars are deterministic for accounts without a custom image.
@@ -75,6 +83,7 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
         deaths: stats?.deaths ?? null,
         sessions: stats?.sessions ?? null,
         minutes: stats?.minutes ?? null,
+        playtime: stats ? formatPlaytime(stats.minutes) : null,
         kd: stats ? stats.kd.toFixed(2) : null,
         kpm: stats ? stats.kpm.toFixed(2) : null,
         cashEarned: steamId ? (cashTotals.get(String(steamId)) || 0) : null,
