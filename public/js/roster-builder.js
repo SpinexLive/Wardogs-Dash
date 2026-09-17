@@ -61,16 +61,19 @@
   }
   function playerItem(player, compact = false, slotIcon = null) {
     const icon = slotIcon || roleIcons[player.role] || roleIcons.infantry;
+    const confirmationIcons = { confirmed: '/images/accept.png', declined: '/images/decline.png', pending: '/images/pending.png' };
+    const confirmation = player.confirmation || 'pending';
     const performance = !compact
       ? `<div class="roster-player-stats"><span>K/D <strong>${player.performance?.kd || '—'}</strong></span><span>KPM <strong>${player.performance?.kpm || '—'}</strong></span></div>`
       : '';
-    return `<div class="roster-player ${compact ? 'roster-player--compact' : ''}" draggable="true" data-player-id="${player.id}" title="${compact ? 'Double-click to return this player to the player list' : 'Drag to a squad slot'}"><img src="${icon}" alt="" /><div class="roster-player-identity"><span>${escapeHtml(player.name)}</span><small>${player.role}</small>${performance}</div><b aria-hidden="true">⠿</b></div>`;
+    const status = compact ? `<img class="roster-player-status" src="${confirmationIcons[confirmation] || confirmationIcons.pending}" alt="${confirmation} event acceptance" title="${confirmation}" />` : '';
+    return `<div class="roster-player ${compact ? 'roster-player--compact' : ''}" draggable="true" data-player-id="${player.id}" title="${compact ? 'Double-click to return this player to the player list' : 'Drag to a squad slot'}"><img src="${icon}" alt="" /><div class="roster-player-identity"><span>${escapeHtml(player.name)}</span><small>${player.role}</small>${performance}</div>${status}<b aria-hidden="true">⠿</b></div>`;
   }
   function escapeHtml(value) { const node = document.createElement('div'); node.textContent = value; return node.innerHTML; }
   function renderPlayers() {
     const assignedIds = new Set(state.squads.flatMap((squad) => squad.assignments.filter(Boolean).map((player) => player.id)));
-    const players = match.players.filter((player) => (state.role === 'all' || player.role === state.role) && player.name.toLowerCase().includes(state.query.toLowerCase()));
-    document.getElementById('player-list').innerHTML = players.map((player) => `<div class="${assignedIds.has(player.id) ? 'is-assigned' : ''}">${playerItem(player)}${assignedIds.has(player.id) ? '<em>Assigned</em>' : ''}</div>`).join('') || '<p class="empty-state">No players match.</p>';
+    const players = match.players.filter((player) => !assignedIds.has(player.id) && (state.role === 'all' || player.role === state.role) && player.name.toLowerCase().includes(state.query.toLowerCase()));
+    document.getElementById('player-list').innerHTML = players.map((player) => `<div>${playerItem(player)}</div>`).join('') || '<p class="empty-state">No available players match.</p>';
   }
   function squadCard(squad, index) {
     const spec = templates[squad.template];

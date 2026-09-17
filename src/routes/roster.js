@@ -17,6 +17,7 @@ router.get('/:eventId', requireAuth, requireDashboardAccess, async (req, res, ne
   try {
     const event = await getRosterEvent(req.params.eventId);
     const steamIds = steamStore.readSteamIds();
+    const confirmations = rosterDb.getRosterConfirmations(req.params.eventId);
     let performance = new Map();
     if (warcon.isConfigured()) {
       try {
@@ -27,7 +28,11 @@ router.get('/:eventId', requireAuth, requireDashboardAccess, async (req, res, ne
     }
     event.players = event.players.map((player) => {
       const stats = performance.get(String(steamIds[player.id] || ''));
-      return { ...player, performance: stats ? { kd: stats.kd.toFixed(2), kpm: stats.kpm.toFixed(2) } : null };
+      return {
+        ...player,
+        confirmation: confirmations.get(player.id) || 'pending',
+        performance: stats ? { kd: stats.kd.toFixed(2), kpm: stats.kpm.toFixed(2) } : null,
+      };
     });
     event.discordPosted = Boolean(rosterDb.getRosterDiscordMessage(req.params.eventId));
     res.render('roster-builder', { active: 'roster', event, savedRoster: rosterDb.getRoster(req.params.eventId), error: null });
