@@ -10,6 +10,7 @@
   };
   const roleIcons = { infantry: '/images/infantry.png', armour: '/images/armour.png', fob: '/images/FOB.png', pilot: '/images/pilot.png', commander: '/images/wardogs.png' };
   const squadLeaderIcon = '/images/squad leader.png';
+  const squadOrder = { commander: 0, armour: 1, pilot: 2, recon: 3, infantry: 4, fob: 5 };
   const state = { query: '', role: 'all', squads: [] };
   let draggedPlayer = null;
 
@@ -81,7 +82,10 @@
     const controlsMarkup = controls ? `<div class="squad-controls">${controls}<span>${capacity(squad)} slots</span></div>` : `<div class="squad-controls squad-controls--fixed"><span>${capacity(squad)} slot${capacity(squad) === 1 ? '' : 's'}</span></div>`;
     return `<article class="squad-card" data-squad-key="${squad.key}"><header><img src="${spec.icon}" alt="" /><input class="squad-name" value="${escapeHtml(squad.name)}" data-index="${index}" aria-label="Squad name" /><button class="remove-squad" data-index="${index}" aria-label="Remove squad">×</button></header>${controlsMarkup}<div class="squad-slot-list" data-drop-squad="${squad.key}">${slots}</div></article>`;
   }
-  function renderSquads() { document.getElementById('squad-list').innerHTML = state.squads.map(squadCard).join('') || '<p class="empty-state">Choose a template to add your first squad.</p>'; }
+  function renderSquads() {
+    state.squads.sort((left, right) => (squadOrder[left.template] ?? 99) - (squadOrder[right.template] ?? 99));
+    document.getElementById('squad-list').innerHTML = state.squads.map(squadCard).join('') || '<p class="empty-state">Choose a template to add your first squad.</p>';
+  }
   function renderCounter() {
     const slots = totalSlots(); const count = assigned(); const invalid = slots > 33 || count > 33;
     document.getElementById('slot-counter').textContent = `${count} / ${slots}`;
