@@ -8,7 +8,7 @@ const templateIconKey = { infantry: 'infantry', armour: 'armour', fob: 'fob', pi
 function emojiMarkup(emoji, fallback) { return emoji ? `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>` : fallback; }
 function escapeEmbed(value) { return String(value || '').replace(/([*_`~|>])/g, '\\$1'); }
 
-async function buildPayload(eventId) {
+async function buildPayload(eventId, { mentionAssigned = false } = {}) {
   const roster = rosterDb.getRoster(eventId);
   if (!roster) throw new Error('Save the roster before sharing it to Discord.');
   const access = store.readAccess();
@@ -16,6 +16,7 @@ async function buildPayload(eventId) {
   const guildEmojis = await discord.getGuildEmojis();
   const emojis = Object.fromEntries(emojiKeys.map((key) => [key, emojiMarkup(guildEmojis.find((emoji) => emoji.id === emojiIds[key]), key === 'confirmed' ? '✅' : key === 'declined' ? '❌' : key === 'pending' ? '⏳' : '•')]));
   const confirmations = rosterDb.getRosterConfirmations(eventId);
+  const assignedMemberIds = [...new Set(roster.squads.flatMap((squad) => squad.assignments.map((player) => String(player.player_id))).filter((id) => /^\d{17,20}$/.test(id)))];
   const fields = roster.squads.slice(0, 25).map((squad) => {
     const leaderCount = Number(squad.leader_slots || 0);
     const playerCount = Number(squad.player_slots || 0);
@@ -27,25 +28,27 @@ async function buildPayload(eventId) {
     return { name: `${emojis[templateIconKey[squad.template]] || '•'} ${escapeEmbed(squad.name)}`, value: lines.join('\n') || 'No players assigned.', inline: false };
   });
   const start = Number(roster.event_start || 0);
-  return {
-    allowed_mentions: { parse: [] },
+  const payload = {
+    // Explicitly allow only rostered Discord users; roles and @everyone cannot be pinged.
+    allowed_mentions: { parse: [], users: mentionAssigned ? assignedMemberIds : [] },
     embeds: [{ color: 0xa61b1b, title: roster.event_name, description: start ? `Starts: <t:${start}:F>\n<t:${start}:R>` : 'Start time pending.', fields, footer: { text: 'Wardogs roster • Use a button below to confirm attendance' } }],
     components: [{ type: 1, components: [
       { type: 2, style: 3, label: 'Confirm', custom_id: `WD-confirm:${eventId}` },
       { type: 2, style: 4, label: 'Decline', custom_id: `WD-Decline:${eventId}` },
     ] }],
   };
+  if (mentionAssigned && assignedMemberIds.length) payload.content = `Roster call: ${assignedMemberIds.map((id) => `<@${id}>`).join(' ')}`;
+  return payload;
 }
 
 async function publishRoster(eventId, channelId) {
   if (!channelId) throw new Error('Raid-Helper did not return the event signup channel.');
-  const payload = await buildPayload(eventId);
   const existing = rosterDb.getRosterDiscordMessage(eventId);
   if (existing && existing.channel_id === channelId) {
-    try { return await discord.updateChannelMessage(existing.channel_id, existing.message_id, payload); }
+    try { return await discord.updateChannelMessage(existing.channel_id, existing.message_id, await buildPayload(eventId)); }
     catch (_) { /* Recreate a removed message. */ }
   }
-  const message = await discord.createChannelMessage(channelId, payload);
+  const message = await discord.createChannelMessage(channelId, await buildPayload(eventId, { mentionAssigned: true }));
   rosterDb.setRosterDiscordMessage(eventId, channelId, message.id);
   return message;
 }
