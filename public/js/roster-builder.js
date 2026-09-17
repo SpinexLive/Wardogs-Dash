@@ -3,8 +3,7 @@
   const templates = {
     infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png', showLeaderControl: true, showPlayerControl: true },
     armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1, playerMax: 2 },
-    fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true },
-    mortar: { label: 'Mortar Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/artillery.png', showLeaderControl: false, showPlayerControl: true },
+    fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 1 },
     pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png', showLeaderControl: false, showPlayerControl: true },
     commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png', showLeaderControl: false, showPlayerControl: false },
   };
@@ -53,7 +52,11 @@
   }
   function squadCard(squad, index) {
     const spec = templates[squad.template];
-    const slotIcon = (slot) => slot < squad.leaderSlots ? squadLeaderIcon : (squad.template === 'commander' ? roleIcons.commander : spec.icon);
+    const slotIcon = (slot) => {
+      if (slot < squad.leaderSlots) return squadLeaderIcon;
+      if (squad.template === 'fob' && slot >= squad.leaderSlots + squad.playerSlots) return '/images/artillery.png';
+      return squad.template === 'commander' ? roleIcons.commander : spec.icon;
+    };
     const slots = Array.from({ length: capacity(squad) }, (_, slot) => squad.assignments[slot]
       ? playerItem(squad.assignments[slot], true, slotIcon(slot))
       : `<div class="squad-slot" data-slot="${slot}"><img src="${slotIcon(slot)}" alt="" /><span>Drop player here</span></div>`).join('');
