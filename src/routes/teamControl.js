@@ -54,7 +54,7 @@ router.post('/configure', requireAuth, requireAdmin, async (req, res, next) => {
       }
     }
 
-    await rcon.setServerName(enabled ? ENFORCED_SERVER_NAME : STANDARD_SERVER_NAME);
+    await rcon.setTeamEnforcementConfig(enabled ? ENFORCED_SERVER_NAME : STANDARD_SERVER_NAME, !enabled);
     store.writeAccess({
       ...store.readAccess(),
       teamEnforcement: { enabled, allowedFactionOne, allowedFactionTwo, blockedFaction },

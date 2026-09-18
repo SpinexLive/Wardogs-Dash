@@ -111,9 +111,16 @@ function replaceConfigValue(configText, sectionHeader, key, value) {
 }
 
 async function setServerName(name) {
+  return setTeamEnforcementConfig(name, null);
+}
+
+async function setTeamEnforcementConfig(name, teamBalanceLocked) {
   const { text, revision, writable } = await getConfig();
   if (!writable) throw new Error('The RCON server does not allow config writes.');
-  const updated = replaceConfigValue(text, '[/Script/WDGame.WDGameSession]', 'ServerName', name);
+  let updated = replaceConfigValue(text, '[/Script/WDGame.WDGameSession]', 'ServerName', name);
+  if (typeof teamBalanceLocked === 'boolean') {
+    updated = replaceConfigValue(updated, '[/Script/WDGame.WDGameStateSession]', 'bLockOverpopulatedTeamsConfig', teamBalanceLocked ? 'True' : 'False');
+  }
   await validateConfig(updated);
   return putConfig(updated, revision);
 }
@@ -180,5 +187,5 @@ async function setReservedSlots(steamIds) {
   return { count: steamIds.length };
 }
 
-module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, setReservedSlots, setServerName, setPlayerFaction };
+module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, setReservedSlots, setServerName, setTeamEnforcementConfig, setPlayerFaction };
 
