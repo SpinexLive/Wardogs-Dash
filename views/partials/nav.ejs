@@ -9,6 +9,7 @@
     <a href="/briefing" class="<%= active === 'briefing' ? 'active' : '' %>"><span aria-hidden="true">▤</span> Briefings</a>
     <a href="/members" class="<%= active === 'members' ? 'active' : '' %>"><span aria-hidden="true">◉</span> Members</a>
     <% if (access.isAdmin) { %>
+      <a href="/team-control" class="<%= active === 'team-control' ? 'active' : '' %>"><span aria-hidden="true">◫</span> 50v50 Control</a>
       <a href="/settings" class="<%= active === 'settings' ? 'active' : '' %>"><span aria-hidden="true">⚙</span> Settings</a>
     <% } %>
   </nav>

@@ -20,6 +20,7 @@ function ensureStore(defaultAdminRoleIds) {
     cashTotalNextUpdateAt: null,
     rosterChannelId: null,
     rosterEmojiMap: {},
+    teamEnforcement: { enabled: false, allowedFactionOne: null, allowedFactionTwo: null, blockedFaction: null },
   });
 }
 
@@ -40,6 +41,7 @@ function readAccess() {
     cashTotalNextUpdateAt: null,
     rosterChannelId: null,
     rosterEmojiMap: {},
+    teamEnforcement: { enabled: false, allowedFactionOne: null, allowedFactionTwo: null, blockedFaction: null },
     ...data,
   };
 }

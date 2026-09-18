@@ -86,6 +86,47 @@ async function putConfig(text, revision) {
   return data;
 }
 
+async function validateConfig(text) {
+  const res = await request('/v1/config/validate', {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: text,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw new Error(data?.error?.message || data?.errors?.[0]?.message || `Server config validation failed: ${res.status}`);
+  return data;
+}
+
+function replaceConfigValue(configText, sectionHeader, key, value) {
+  const lines = configText.split(/\r?\n/);
+  const sectionStart = lines.findIndex((line) => line.trim() === sectionHeader);
+  if (sectionStart === -1) throw new Error(`Could not find ${sectionHeader} in the server config.`);
+  let sectionEnd = lines.length;
+  for (let index = sectionStart + 1; index < lines.length; index += 1) {
+    if (/^\s*\[/.test(lines[index])) { sectionEnd = index; break; }
+  }
+  const keyPattern = new RegExp(`^\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*=`);
+  const keyIndex = lines.slice(sectionStart + 1, sectionEnd).findIndex((line) => keyPattern.test(line));
+  if (keyIndex === -1) lines.splice(sectionEnd, 0, `${key}=${value}`);
+  else lines[sectionStart + 1 + keyIndex] = `${key}=${value}`;
+  return lines.join('\n');
+}
+
+async function setServerName(name) {
+  const { text, revision, writable } = await getConfig();
+  if (!writable) throw new Error('The RCON server does not allow config writes.');
+  const updated = replaceConfigValue(text, '[/Script/WDGame.WDGameSession]', 'ServerName', name);
+  await validateConfig(updated);
+  return putConfig(updated, revision);
+}
+
+async function setPlayerFaction(steamId, faction) {
+  const res = await request(`/v1/players/${encodeURIComponent(steamId)}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ faction }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || `Failed to move player to faction: ${res.status}`);
+  return data;
+}
+
 // Rewrites DefaultReservedPlayerIds inside [/Script/WDGame.WDGameSession], leaving everything else untouched.
 function replaceReservedPlayerIds(configText, steamIds) {
   const sectionHeader = '[/Script/WDGame.WDGameSession]';
@@ -139,5 +180,5 @@ async function setReservedSlots(steamIds) {
   return { count: steamIds.length };
 }
 
-module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, setReservedSlots };
+module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, setReservedSlots, setServerName, setPlayerFaction };
 
