@@ -2,6 +2,7 @@ const express = require('express');
 const rcon = require('../lib/rcon');
 const roster = require('../lib/roster');
 const { getDashboardMetrics } = require('../lib/dashboardMetrics');
+const { syncReservedSlots } = require('../lib/priorityAccess');
 const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
@@ -35,7 +36,7 @@ router.post('/update-vip', requireAuth, requireDashboardAccess, async (req, res)
       );
     }
 
-    await rcon.setReservedSlots(steamIds);
+    await syncReservedSlots(steamIds);
 
     let message = `Updated VIP for ${steamIds.length} member(s).`;
     if (skipped) message += ` Skipped ${skipped} without a Steam ID set.`;

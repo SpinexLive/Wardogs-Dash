@@ -9,6 +9,8 @@ const store = require('./lib/store');
 const steamStore = require('./lib/steamStore');
 const { startCashTracking } = require('./lib/cashTracker');
 const { startTeamEnforcement } = require('./lib/teamEnforcement');
+const { startBountyHunter } = require('./lib/bountyHunter');
+const { startPriorityAccessExpiry } = require('./lib/priorityAccess');
 const { getAccessFlags } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const dashboardRoutes = require('./routes/dashboard');
@@ -17,6 +19,7 @@ const settingsRoutes = require('./routes/settings');
 const rosterRoutes = require('./routes/roster');
 const briefingRoutes = require('./routes/briefing');
 const teamControlRoutes = require('./routes/teamControl');
+const bountyHunterRoutes = require('./routes/bountyHunter');
 const discordInteractionsRoutes = require('./routes/discordInteractions');
 
 const SESSIONS_DIR = path.join(__dirname, '..', 'data', 'sessions');
@@ -26,6 +29,8 @@ steamStore.ensureStore();
 fs.mkdirSync(SESSIONS_DIR, { recursive: true });
 startCashTracking();
 startTeamEnforcement();
+startBountyHunter();
+startPriorityAccessExpiry();
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -84,6 +89,7 @@ app.use('/settings', settingsRoutes);
 app.use('/roster', rosterRoutes);
 app.use('/briefing', briefingRoutes);
 app.use('/team-control', teamControlRoutes);
+app.use('/bounty-hunter', bountyHunterRoutes);
 
 app.use((req, res) => {
   res.status(404).render('error', { message: 'Page not found.' });

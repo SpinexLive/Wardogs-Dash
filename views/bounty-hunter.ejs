@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- include('partials/head', { title: 'Bounty Hunter - Wardogs Dash' }) %></head>
+<body>
+  <%- include('partials/nav') %>
+  <main class="page bounty-page">
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">Admin-only server event</p>
+        <h1>Bounty Hunter</h1>
+        <p class="muted">Start a manual bounty for one random online clan member. Bounty records are retained for future Discord posting.</p>
+      </div>
+      <% if (activeBounty) { %>
+        <form method="POST" action="/bounty-hunter/<%= activeBounty.id %>/cancel"><button class="action-button" type="submit">Cancel bounty</button></form>
+      <% } else { %>
+        <form method="POST" action="/bounty-hunter/start"><button class="action-button action-button--primary" type="submit" <%= configured ? '' : 'disabled' %>>Start Bounty</button></form>
+      <% } %>
+    </header>
+    <% if (started) { %><p class="save-confirm">Bounty announced to the server. Waiting for the Warcon kill feed.</p><% } %>
+    <% if (error) { %><p class="error-banner"><%= error %></p><% } %>
+    <% if (activeBounty) { %>
+      <section class="dashboard-panel bounty-active">
+        <p class="eyebrow">Active bounty</p><h2><%= activeBounty.target_name %></h2>
+        <p><span>Target faction</span><strong><%= activeBounty.target_faction || 'Unknown' %></strong></p>
+        <p class="muted">Killing them gives 3 days Priority Access to our server.</p>
+      </section>
+    <% } else { %>
+      <section class="dashboard-panel bounty-empty"><p class="eyebrow">No active bounty</p><h2>Ready when you are</h2><p class="muted"><%= configured ? 'Start Bounty only selects from eligible clan members currently connected to the game server.' : 'RCON and Warcon kill-feed access are required before bounties can start.' %></p></section>
+    <% } %>
+    <section class="dashboard-panel bounty-history">
+      <div class="panel-heading"><div><p class="eyebrow">Recorded for Discord sharing</p><h2>Bounty history</h2></div><span class="status-pill"><%= bounties.length %> recorded</span></div>
+      <% if (!bounties.length) { %><p class="empty-state">No bounties have been started.</p><% } else { %>
+        <div class="bounty-history-list">
+          <% bounties.forEach((bounty) => { %>
+            <article>
+              <div><span class="bounty-status bounty-status--<%= bounty.status %>"><%= bounty.status %></span><strong><%= bounty.target_name %></strong><small><%= new Date(bounty.started_at + 'Z').toLocaleString('en-GB') %></small></div>
+              <% if (bounty.status === 'claimed') { %>
+                <p><strong><%= bounty.killer_name %></strong> &middot; <%= bounty.killer_faction || 'Unknown faction' %> &middot; <%= bounty.cause || 'Unknown weapon' %><br /><span><%= bounty.reward_expires_at ? `Priority Access until ${new Date(bounty.reward_expires_at + 'Z').toLocaleString('en-GB')}` : 'Existing VIP member — no Priority Access reward needed.' %></span></p>
+              <% } else { %>
+                <p><%= bounty.status === 'active' ? 'Awaiting a player-caused kill.' : 'Cancelled' %></p>
+              <% } %>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

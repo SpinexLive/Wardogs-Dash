@@ -134,6 +134,15 @@ async function setPlayerFaction(steamId, faction) {
   return data;
 }
 
+async function broadcast(message) {
+  const res = await request('/v1/broadcast', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || `Failed to broadcast message: ${res.status}`);
+  return data;
+}
+
 // Rewrites DefaultReservedPlayerIds inside [/Script/WDGame.WDGameSession], leaving everything else untouched.
 function replaceReservedPlayerIds(configText, steamIds) {
   const sectionHeader = '[/Script/WDGame.WDGameSession]';
@@ -187,5 +196,5 @@ async function setReservedSlots(steamIds) {
   return { count: steamIds.length };
 }
 
-module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, setReservedSlots, setServerName, setTeamEnforcementConfig, setPlayerFaction };
+module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, setReservedSlots, setServerName, setTeamEnforcementConfig, setPlayerFaction, broadcast };
 
