@@ -61,10 +61,13 @@ async function getPlayerSummaries(steamIds) {
   return summaries;
 }
 
-async function getKills({ victim, limit = 20 } = {}) {
+async function getKills({ victim, killer, before, beforeTime, limit = 20 } = {}) {
   if (!isConfigured()) throw new Error('Warcon API is not configured.');
   const params = new URLSearchParams({ limit: String(Math.min(200, Math.max(1, limit))) });
   if (victim) params.set('victim', String(victim));
+  if (killer) params.set('killer', String(killer));
+  if (before) params.set('before', String(before));
+  if (beforeTime) params.set('beforeTime', String(beforeTime));
   const response = await fetch(`${API_ORIGIN}/api/servers/${encodeURIComponent(config.WARCON_SERVER_ID)}/kills?${params}`, {
     headers: { Authorization: `Bearer ${config.WARCON_API_KEY}` }, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
