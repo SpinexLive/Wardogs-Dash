@@ -25,13 +25,13 @@ async function buildLeaderboardPayload() {
   const linked = clanMembers.map((member) => ({ name: displayName(member), steamId: steamIds[member.user.id] })).filter((member) => member.steamId);
   const ids = linked.map((member) => String(member.steamId));
   const cashTotals = rosterDb.getCashTotals(ids);
-  const longestHeadshots = rosterDb.getLongestHeadshots(ids);
+  const longestRifleHeadshots = rosterDb.getLongestRifleHeadshots(ids);
   const performance = await warcon.getPlayerSummaries(ids);
   const rows = linked.map((member) => ({
     name: member.name,
     cash: cashTotals.get(String(member.steamId)) || 0,
     kills: performance.get(String(member.steamId))?.kills || 0,
-    longestHeadshot: longestHeadshots.get(String(member.steamId)) || 0,
+    longestRifleHeadshot: longestRifleHeadshots.get(String(member.steamId)) || 0,
   }));
 
   return {
@@ -43,9 +43,9 @@ async function buildLeaderboardPayload() {
       fields: [
         { name: '💰 Top 10 Cash Earners', value: rankedLines(rows, 'cash', (value) => `$${value.toLocaleString()}`), inline: true },
         { name: '⚔️ Top 10 Killers', value: rankedLines(rows, 'kills', (value) => `${value.toLocaleString()} kills`), inline: true },
-        { name: '🎯 Top 10 Longest Headshots', value: rankedLines(rows, 'longestHeadshot', (value) => `${Math.round(value)}m`), inline: true },
+        { name: '🎯 Top 10 Longest Rifle Headshots', value: rankedLines(rows, 'longestRifleHeadshot', (value) => `${Math.round(value)}m`), inline: true },
       ],
-      footer: { text: 'Wardogs Dash • Cash tracked locally • Kills from Warcon' },
+      footer: { text: 'Wardogs Dash • Cash tracked locally • Rifle headshots from Warcon' },
       timestamp: new Date().toISOString(),
     }],
   };
