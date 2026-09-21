@@ -30,7 +30,7 @@ db.exec(`
 `);
 
 function getActiveBounty() { return db.prepare("SELECT * FROM bounties WHERE status = 'active' LIMIT 1").get() || null; }
-function getRecentBounties(limit = 12) { return db.prepare('SELECT b.*, rewards.expires_at AS reward_expires_at FROM bounties AS b LEFT JOIN priority_access_rewards AS rewards ON rewards.bounty_id = b.id ORDER BY b.id DESC LIMIT ?').all(limit); }
+function getRecentBounties(limit = 12) { return db.prepare("SELECT b.*, rewards.expires_at AS reward_expires_at FROM bounties AS b LEFT JOIN priority_access_rewards AS rewards ON rewards.bounty_id = b.id WHERE b.status = 'claimed' ORDER BY b.id DESC LIMIT ?").all(limit); }
 function startBounty(target, startedBy) {
   const result = db.prepare('INSERT INTO bounties (target_steam_id, target_name, target_faction, started_by) VALUES (?, ?, ?, ?)').run(target.steamId, target.name, target.faction || null, startedBy || null);
   return db.prepare('SELECT * FROM bounties WHERE id = ?').get(result.lastInsertRowid);

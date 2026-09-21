@@ -4,7 +4,7 @@ const rosterDb = require('../lib/rosterDb');
 const steamStore = require('../lib/steamStore');
 const warcon = require('../lib/warcon');
 const { publishRoster, sendPendingReminder } = require('../lib/rosterDiscord');
-const { requireAuth, requireDashboardAccess, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
@@ -38,21 +38,21 @@ router.get('/:eventId', requireAuth, requireDashboardAccess, async (req, res, ne
     res.render('roster-builder', { active: 'roster', event, savedRoster: rosterDb.getRoster(req.params.eventId), error: null });
   } catch (err) { next(err); }
 });
-router.post('/:eventId', requireAuth, requireAdmin, async (req, res, next) => {
+router.post('/:eventId', requireAuth, requireDashboardAccess, async (req, res, next) => {
   try {
     const { event, squads } = req.body || {};
     if (!event || String(event.id) !== req.params.eventId || !Array.isArray(squads)) return res.status(400).json({ error: 'Invalid roster payload.' });
     res.json({ ok: true, resetConfirmations: rosterDb.saveRoster(event, squads) });
   } catch (err) { next(err); }
 });
-router.post('/:eventId/share', requireAuth, requireAdmin, async (req, res, next) => {
+router.post('/:eventId/share', requireAuth, requireDashboardAccess, async (req, res, next) => {
   try {
     const event = await getRosterEvent(req.params.eventId);
     await publishRoster(req.params.eventId, event.channelId);
     res.json({ ok: true });
   } catch (err) { next(err); }
 });
-router.post('/:eventId/remind-pending', requireAuth, requireAdmin, async (req, res, next) => {
+router.post('/:eventId/remind-pending', requireAuth, requireDashboardAccess, async (req, res, next) => {
   try {
     const event = await getRosterEvent(req.params.eventId);
     await sendPendingReminder(req.params.eventId, event.channelId);
