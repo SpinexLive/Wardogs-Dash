@@ -14,18 +14,14 @@
       </div>
       <div class="header-actions">
         <%- include('partials/action-button', { href: '/members', label: 'Manage roster', primary: false }) %>
-        <form method="POST" action="/dashboard/update-vip"><button type="submit" class="action-button action-button--primary">Sync VIP slots</button></form>
       </div>
     </header>
 
-    <% if (vipSuccess) { %><p class="save-confirm"><%= vipSuccess %></p><% } %>
-    <% if (vipError) { %><p class="error-banner"><%= vipError %></p><% } %>
 
     <section class="metric-grid">
       <%- include('partials/metric-card', { label: 'Active roster', value: dashboard.metrics.rosterCount, detail: 'Configured member roles' }) %>
       <%- include('partials/metric-card', { label: 'Ranked members', value: dashboard.metrics.memberRanked, detail: 'Holding the Member rank' }) %>
       <%- include('partials/metric-card', { label: 'Steam linked', value: dashboard.metrics.steamCoverage + '%', detail: dashboard.metrics.steamLinked + ' roster records linked' }) %>
-      <%- include('partials/metric-card', { label: 'VIP ready', value: dashboard.metrics.vipEligible, detail: 'Eligible players with Steam IDs' }) %>
       <%- include('partials/metric-card', { label: 'On the server', value: dashboard.metrics.serverPlayers === null ? '—' : dashboard.metrics.serverPlayers + (dashboard.metrics.serverCapacity ? ' / ' + dashboard.metrics.serverCapacity : ''), detail: dashboard.metrics.serverPlayers === null ? 'RCON server unavailable' : 'Live game-server player count' }) %>
       <%- include('partials/metric-card', { label: 'Cash earned', value: '$' + dashboard.metrics.cashEarned.toLocaleString(), detail: 'Tracked gains across all players', cardClass: 'metric-card--cash' }) %>
     </section>

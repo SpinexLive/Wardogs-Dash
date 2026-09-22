@@ -1,14 +1,74 @@
-<!DOCTYPE html><html lang="en"><head><%- include('partials/head', { title: 'Members - Wardogs Dash' }) %></head><body class="members-body">
-  <%- include('partials/nav') %><main class="page members-page">
-    <header class="dashboard-header"><div><p class="eyebrow">Personnel command</p><h1>Member roster</h1><p class="muted">Live Discord membership, game-server presence, Steam identity, rank, and reserved-slot status.</p></div><% if (access.isAdmin) { %><a href="/settings" class="action-button">Configure roles</a><% } %></header>
-    <% if (vipError) { %><p class="error-banner"><%= vipError %></p><% } else if (!vipConfigured) { %><p class="notice-banner">Live server and VIP lookup is unavailable until RCON is configured.</p><% } %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head', { title: 'Members - Wardogs Dash' }) %>
+</head>
+<body class="members-body">
+  <%- include('partials/nav') %>
+  <main class="page members-page">
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">Personnel command</p>
+        <h1>Member roster</h1>
+        <p class="muted">Live Discord membership, game-server presence, Steam identity, and rank.</p>
+      </div>
+      <% if (access.isAdmin) { %><a href="/settings" class="action-button">Configure roles</a><% } %>
+    </header>
+
+    <% if (serverError) { %><p class="error-banner"><%= serverError %></p><% } else if (!serverConfigured) { %><p class="notice-banner">Live server presence is unavailable until RCON is configured.</p><% } %>
     <% if (performanceError) { %><p class="notice-banner"><%= performanceError %></p><% } %>
-    <section class="metric-grid member-metric-grid"><%- include('partials/metric-card', { label: 'Roster members', value: members.length, detail: 'Across configured roles' }) %><%- include('partials/metric-card', { label: 'On server', value: memberStats.online, detail: 'Live RCON player match' }) %><%- include('partials/metric-card', { label: 'Steam linked', value: memberStats.linkedSteam, detail: 'Ready for game services' }) %><%- include('partials/metric-card', { label: 'VIP active', value: memberStats.vipEnabled, detail: 'Reserved slots confirmed' }) %></section>
-    <% if (!hasMemberRoles) { %><section class="dashboard-panel empty-panel"><h2>Roster roles not configured</h2><p class="muted">Choose one or more Member Roles in Settings to populate this roster.</p><a href="/settings" class="action-button action-button--primary">Open settings</a></section>
-    <% } else if (!members.length) { %><section class="dashboard-panel empty-panel"><h2>No members found</h2><p class="muted">No current Discord members have a configured roster role.</p></section>
-    <% } else { %><section class="dashboard-panel member-directory member-directory--table"><div class="directory-toolbar"><div><p class="eyebrow">Live directory</p><h2>All roster members</h2></div><input type="search" id="member-search" class="member-search" placeholder="Search roster..." autocomplete="off" /></div>
-      <div class="member-table-scroll"><table class="member-table"><thead><tr><th><button type="button" class="member-sort" data-sort-key="member">Member</button></th><th>Server</th><th>Steam identity</th><th><button type="button" class="member-sort" data-sort-key="kills">Kills</button></th><th><button type="button" class="member-sort" data-sort-key="deaths">Deaths</button></th><th><button type="button" class="member-sort" data-sort-key="kd">K/D</button></th><th><button type="button" class="member-sort" data-sort-key="sessions">Sessions</button></th><th><button type="button" class="member-sort" data-sort-key="minutes">Playtime</button></th><th><button type="button" class="member-sort" data-sort-key="kpm">KPM</button></th><th><button type="button" class="member-sort" data-sort-key="cash">Cash earned</button></th><th>VIP status</th></tr></thead><tbody id="member-rows"><% members.forEach((member) => { %><tr class="member-row <%= member.online ? 'member-row--online' : '' %>" data-member="<%= member.nickname.toLowerCase() %>" data-kills="<%= member.kills ?? -1 %>" data-deaths="<%= member.deaths ?? -1 %>" data-kd="<%= member.kd ?? -1 %>" data-sessions="<%= member.sessions ?? -1 %>" data-minutes="<%= member.minutes ?? -1 %>" data-kpm="<%= member.kpm ?? -1 %>" data-cash="<%= member.cashEarned ?? -1 %>"><td><div class="member-identity"><img class="member-avatar" src="<%= member.avatar %>" alt="" /><div><strong><%= member.nickname %></strong><div class="member-ranks"><% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %><% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %><% if (!member.isRecruit && !member.isMemberRank) { %><span class="rank-badge rank-unassigned">Unranked</span><% } %></div></div></div></td><td><span class="server-presence <%= member.online ? 'server-presence--online' : '' %>"><i></i><%= member.online ? 'On server' : 'Offline' %></span></td><td><button type="button" class="steam-id-btn steam-id-btn--table <%= member.steamId ? 'steam-id-btn--linked' : '' %>" data-dialog="steam-dialog-<%= member.id %>"><span class="steam-id-dot"></span><%= member.steamId || 'Link Steam ID' %></button></td><td class="performance-value"><%= member.kills === null ? '—' : member.kills.toLocaleString() %></td><td class="performance-value"><%= member.deaths === null ? '—' : member.deaths.toLocaleString() %></td><td class="performance-value performance-value--kd"><%= member.kd ?? '—' %></td><td class="performance-value"><%= member.sessions === null ? '—' : member.sessions.toLocaleString() %></td><td class="performance-value"><%= member.playtime ?? '—' %></td><td class="performance-value performance-value--kd"><%= member.kpm ?? '—' %></td><td class="cash-value"><%= member.cashEarned === null ? '—' : '$' + member.cashEarned.toLocaleString() %></td><td><span class="vip-status <%= member.vip ? 'vip-status--active' : '' %>"><i></i><%= member.vip ? 'VIP active' : 'Standard' %></span></td></tr><% }) %></tbody></table></div>
-      <p id="member-search-empty" class="empty-state" hidden>No members match your search.</p>
-    </section><% if (access.hasAccess) { %><% members.forEach((member) => { %><dialog id="steam-dialog-<%= member.id %>" class="steam-dialog"><form method="POST" action="/members/steam-id"><input type="hidden" name="userId" value="<%= member.id %>" /><label for="steamId-<%= member.id %>">Steam ID for <%= member.nickname %></label><input type="text" id="steamId-<%= member.id %>" name="steamId" value="<%= member.steamId || '' %>" placeholder="e.g. 76561198000000000" autocomplete="off" /><div class="dialog-actions"><button type="button" class="btn-secondary" data-close-dialog>Cancel</button><button type="submit" class="btn-primary">Save</button></div></form></dialog><% }) %><% } %><% } %>
-  </main><script src="/js/app.js"></script>
-</body></html>
+
+    <section class="metric-grid member-metric-grid">
+      <%- include('partials/metric-card', { label: 'Roster members', value: members.length, detail: 'Across configured roles' }) %>
+      <%- include('partials/metric-card', { label: 'On server', value: memberStats.online, detail: 'Live RCON player match' }) %>
+      <%- include('partials/metric-card', { label: 'Steam linked', value: memberStats.linkedSteam, detail: 'Ready for game services' }) %>
+    </section>
+
+    <% if (!hasMemberRoles) { %>
+      <section class="dashboard-panel empty-panel"><h2>Roster roles not configured</h2><p class="muted">Choose one or more Member Roles in Settings to populate this roster.</p><a href="/settings" class="action-button action-button--primary">Open settings</a></section>
+    <% } else if (!members.length) { %>
+      <section class="dashboard-panel empty-panel"><h2>No members found</h2><p class="muted">No current Discord members have a configured roster role.</p></section>
+    <% } else { %>
+      <section class="dashboard-panel member-directory member-directory--table">
+        <div class="directory-toolbar"><div><p class="eyebrow">Live directory</p><h2>All roster members</h2></div><input type="search" id="member-search" class="member-search" placeholder="Search roster..." autocomplete="off" /></div>
+        <div class="member-table-scroll">
+          <table class="member-table">
+            <thead><tr>
+              <th><button type="button" class="member-sort" data-sort-key="member">Member</button></th>
+              <th>Server</th><th>Steam identity</th>
+              <th><button type="button" class="member-sort" data-sort-key="kills">Kills</button></th>
+              <th><button type="button" class="member-sort" data-sort-key="deaths">Deaths</button></th>
+              <th><button type="button" class="member-sort" data-sort-key="kd">K/D</button></th>
+              <th><button type="button" class="member-sort" data-sort-key="sessions">Sessions</button></th>
+              <th><button type="button" class="member-sort" data-sort-key="minutes">Playtime</button></th>
+              <th><button type="button" class="member-sort" data-sort-key="kpm">KPM</button></th>
+              <th><button type="button" class="member-sort" data-sort-key="cash">Cash earned</button></th>
+            </tr></thead>
+            <tbody id="member-rows">
+              <% members.forEach((member) => { %>
+                <tr class="member-row <%= member.online ? 'member-row--online' : '' %>" data-member="<%= member.nickname.toLowerCase() %>" data-kills="<%= member.kills ?? -1 %>" data-deaths="<%= member.deaths ?? -1 %>" data-kd="<%= member.kd ?? -1 %>" data-sessions="<%= member.sessions ?? -1 %>" data-minutes="<%= member.minutes ?? -1 %>" data-kpm="<%= member.kpm ?? -1 %>" data-cash="<%= member.cashEarned ?? -1 %>">
+                  <td><div class="member-identity"><img class="member-avatar" src="<%= member.avatar %>" alt="" /><div><strong><%= member.nickname %></strong><div class="member-ranks"><% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %><% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %><% if (!member.isRecruit && !member.isMemberRank) { %><span class="rank-badge rank-unassigned">Unranked</span><% } %></div></div></div></td>
+                  <td><span class="server-presence <%= member.online ? 'server-presence--online' : '' %>"><i></i><%= member.online ? 'On server' : 'Offline' %></span></td>
+                  <td><button type="button" class="steam-id-btn steam-id-btn--table <%= member.steamId ? 'steam-id-btn--linked' : '' %>" data-dialog="steam-dialog-<%= member.id %>"><span class="steam-id-dot"></span><%= member.steamId || 'Link Steam ID' %></button></td>
+                  <td class="performance-value"><%= member.kills === null ? '—' : member.kills.toLocaleString() %></td>
+                  <td class="performance-value"><%= member.deaths === null ? '—' : member.deaths.toLocaleString() %></td>
+                  <td class="performance-value performance-value--kd"><%= member.kd ?? '—' %></td>
+                  <td class="performance-value"><%= member.sessions === null ? '—' : member.sessions.toLocaleString() %></td>
+                  <td class="performance-value"><%= member.playtime ?? '—' %></td>
+                  <td class="performance-value performance-value--kd"><%= member.kpm ?? '—' %></td>
+                  <td class="cash-value"><%= member.cashEarned === null ? '—' : '$' + member.cashEarned.toLocaleString() %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <p id="member-search-empty" class="empty-state" hidden>No members match your search.</p>
+      </section>
+      <% if (access.hasAccess) { members.forEach((member) => { %>
+        <dialog id="steam-dialog-<%= member.id %>" class="steam-dialog"><form method="POST" action="/members/steam-id"><input type="hidden" name="userId" value="<%= member.id %>" /><label for="steamId-<%= member.id %>">Steam ID for <%= member.nickname %></label><input type="text" id="steamId-<%= member.id %>" name="steamId" value="<%= member.steamId || '' %>" placeholder="e.g. 76561198000000000" autocomplete="off" /><div class="dialog-actions"><button type="button" class="btn-secondary" data-close-dialog>Cancel</button><button type="submit" class="btn-primary">Save</button></div></form></dialog>
+      <% }) } %>
+    <% } %>
+  </main>
+  <script src="/js/app.js"></script>
+</body>
+</html>

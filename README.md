@@ -49,8 +49,7 @@ src/
   config.js          env var loading
   server.js           app entry point
   lib/discord.js      Discord OAuth2 + bot REST API calls
-  lib/rcon.js          Wardogs RCON API client (VIP/reserved slots)
-  lib/roster.js        computes who should have VIP
+  lib/rcon.js          Wardogs RCON API client
   lib/store.js         reads/writes data/access.json
   lib/steamStore.js    reads/writes data/steam-ids.json
   lib/dashboardMetrics.js  aggregates live roster and operational metrics
@@ -82,7 +81,7 @@ tracked earnings total from the first observation onward; it is not a retroactiv
 
 ## Operational dashboard data
 
-The dashboard continues to use the existing roster and Steam-ID stores for roster/VIP metrics.
+The dashboard continues to use the existing roster and Steam-ID stores for roster and Steam-link metrics.
 It reads attendance, match history, and roster-change records from `data/operations.json` when
 available. An empty or absent file renders an explicit empty state; no sample Discord data is used.
 The importer can write this shape without changing the dashboard route:

@@ -35,7 +35,7 @@
             <article>
               <div><span class="bounty-status bounty-status--<%= bounty.status %>"><%= bounty.status %></span><strong><%= bounty.target_name %></strong><small><%= new Date(bounty.started_at + 'Z').toLocaleString('en-GB') %></small></div>
               <% if (bounty.status === 'claimed') { %>
-                <p><strong><%= bounty.killer_name %></strong> &middot; <%= bounty.killer_faction || 'Unknown faction' %> &middot; <%= bounty.cause || 'Unknown weapon' %><br /><span><%= bounty.reward_expires_at ? `Priority Access until ${new Date(bounty.reward_expires_at + 'Z').toLocaleString('en-GB')}` : 'Existing VIP member — no Priority Access reward needed.' %></span></p>
+                <p><strong><%= bounty.killer_name %></strong> &middot; <%= bounty.killer_faction || 'Unknown faction' %> &middot; <%= bounty.cause || 'Unknown weapon' %><br /><span><%= bounty.reward_expires_at ? `Priority Access until ${new Date(bounty.reward_expires_at + 'Z').toLocaleString('en-GB')}` : 'Already has Priority Access — no additional reward needed.' %></span></p>
               <% } else { %>
                 <p><%= bounty.status === 'active' ? 'Awaiting a player-caused kill.' : 'Cancelled' %></p>
               <% } %>

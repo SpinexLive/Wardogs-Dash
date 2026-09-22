@@ -143,58 +143,5 @@ async function broadcast(message) {
   return data;
 }
 
-// Rewrites DefaultReservedPlayerIds inside [/Script/WDGame.WDGameSession], leaving everything else untouched.
-function replaceReservedPlayerIds(configText, steamIds) {
-  const sectionHeader = '[/Script/WDGame.WDGameSession]';
-  const lines = configText.split(/\r?\n/);
-  const sectionStart = lines.findIndex((line) => line.trim() === sectionHeader);
-  if (sectionStart === -1) {
-    throw new Error(`Could not find ${sectionHeader} in the server config.`);
-  }
-
-  let sectionEnd = lines.length;
-  for (let i = sectionStart + 1; i < lines.length; i += 1) {
-    if (/^\s*\[/.test(lines[i])) {
-      sectionEnd = i;
-      break;
-    }
-  }
-
-  const keyPattern = /^\s*[!.]DefaultReservedPlayerIds\s*=/;
-  const before = lines.slice(0, sectionStart + 1);
-  const sectionBody = lines.slice(sectionStart + 1, sectionEnd).filter((line) => !keyPattern.test(line));
-  const after = lines.slice(sectionEnd);
-  const newEntries = [
-    '!DefaultReservedPlayerIds=ClearArray',
-    ...steamIds.map((id) => `.DefaultReservedPlayerIds="${id}"`),
-  ];
-
-  return [...before, ...newEntries, ...sectionBody, ...after].join('\n');
-}
-
-// Sets the full reserved-slot list, using the live write endpoints on older builds
-// and falling back to editing the config document on builds where they were removed.
-async function setReservedSlots(steamIds) {
-  const capabilities = await getCapabilities().catch(() => null);
-  const supportsLegacyWrite = capabilities?.routes?.includes('POST /v1/reserved-slots');
-
-  if (supportsLegacyWrite) {
-    const current = new Set(await getReservedSlots());
-    const target = new Set(steamIds);
-    await Promise.all([
-      ...[...target].filter((id) => !current.has(id)).map((id) => addReservedSlot(id)),
-      ...[...current].filter((id) => !target.has(id)).map((id) => removeReservedSlot(id)),
-    ]);
-    return { count: target.size };
-  }
-
-  const { text, revision } = await getConfig();
-  const result = await putConfig(replaceReservedPlayerIds(text, steamIds), revision);
-  if (result.ok === false) {
-    throw new Error(result.error?.message || result.errors?.[0]?.message || 'Server rejected the config update.');
-  }
-  return { count: steamIds.length };
-}
-
-module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, setReservedSlots, setServerName, setTeamEnforcementConfig, setPlayerFaction, broadcast };
+module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, addReservedSlot, removeReservedSlot, setServerName, setTeamEnforcementConfig, setPlayerFaction, broadcast };
 

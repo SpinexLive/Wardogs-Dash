@@ -29,7 +29,7 @@ module.exports = {
     .split(',')
     .map((id) => id.trim())
     .filter(Boolean),
-  // Optional: only needed for the VIP (reserved slot) lookup on the Members page.
+  // Optional: used for live game-server status and Bounty Hunter announcements.
   RCON_HOST: process.env.RCON_HOST || '127.0.0.1',
   RCON_PORT: process.env.RCON_PORT || '7776',
   RCON_PASSWORD: process.env.RCON_PASSWORD || '',

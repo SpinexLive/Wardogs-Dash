@@ -59,7 +59,6 @@ async function getDashboardMetrics() {
   const steamIds = steamStore.readSteamIds();
   const operations = readOperations();
   const roster = access.memberRoleIds.length ? guildMembers.filter((member) => member.roles.some((id) => access.memberRoleIds.includes(id))) : [];
-  const eligible = roster.filter((member) => !access.recruitRankRoleId || !member.roles.includes(access.recruitRankRoleId));
   const steamLinked = roster.filter((member) => steamIds[member.user.id]).length;
   let clanAverages = null;
   if (warcon.isConfigured()) {
@@ -89,7 +88,6 @@ async function getDashboardMetrics() {
       memberRanked: roster.filter((member) => access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)).length,
       steamLinked,
       steamCoverage: roster.length ? Math.round((steamLinked / roster.length) * 100) : 0,
-      vipEligible: eligible.filter((member) => steamIds[member.user.id]).length,
       attendanceRate: calculateAttendance(attendance),
       winRate: calculateWinRate(matches),
       matchesPlayed: matches.length,

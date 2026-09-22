@@ -50,7 +50,10 @@ const claimBounty = db.transaction((bountyId, kill, message, grantPriority = tru
   db.prepare('INSERT INTO bounty_messages (bounty_id, kind, body, server_sent_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)').run(bountyId, 'claimed', message);
   return { claimed: true, reward };
 });
-function activePrioritySteamIds() { return db.prepare("SELECT DISTINCT steam_id FROM priority_access_rewards WHERE revoked_at IS NULL AND expires_at > CURRENT_TIMESTAMP").all().map((row) => row.steam_id); }
-function expirePriorityRewards() { return db.prepare("UPDATE priority_access_rewards SET revoked_at = CURRENT_TIMESTAMP WHERE revoked_at IS NULL AND expires_at <= CURRENT_TIMESTAMP").run().changes; }
+const expirePriorityRewards = db.transaction(() => {
+  const steamIds = db.prepare("SELECT DISTINCT steam_id FROM priority_access_rewards WHERE revoked_at IS NULL AND expires_at <= CURRENT_TIMESTAMP").all().map((row) => row.steam_id);
+  if (steamIds.length) db.prepare("UPDATE priority_access_rewards SET revoked_at = CURRENT_TIMESTAMP WHERE revoked_at IS NULL AND expires_at <= CURRENT_TIMESTAMP").run();
+  return steamIds;
+});
 
-module.exports = { getActiveBounty, getRecentBounties, startBounty, cancelBounty, hasSeenFeedEvent, rememberFeedEvent, addMessage, claimBounty, activePrioritySteamIds, expirePriorityRewards };
+module.exports = { getActiveBounty, getRecentBounties, startBounty, cancelBounty, hasSeenFeedEvent, rememberFeedEvent, addMessage, claimBounty, expirePriorityRewards };

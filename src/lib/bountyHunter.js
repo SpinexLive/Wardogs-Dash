@@ -1,8 +1,7 @@
 const bountyDb = require('./bountyDb');
 const warcon = require('./warcon');
 const rcon = require('./rcon');
-const roster = require('./roster');
-const { syncReservedSlots } = require('./priorityAccess');
+const { grantPriorityAccess } = require('./priorityAccess');
 
 const POLL_INTERVAL_MS = 2500;
 let timer = null;
@@ -24,14 +23,14 @@ async function pollBountyHunter() {
       const killedAfterStart = new Date(kill.ts || 0).getTime() >= new Date(bounty.started_at).getTime();
       if (!killedAfterStart || !kill.killer?.steamId || kill.suicide) continue;
       const killerFaction = kill.killer.faction || 'Unknown faction';
-      const vipTargets = await roster.getVipTargetSteamIds();
-      const alreadyVip = vipTargets.steamIds.map(String).includes(String(kill.killer.steamId));
-      const message = alreadyVip
+      const reservedSlots = new Set((await rcon.getReservedSlots()).map(String));
+      const alreadyHasPriority = reservedSlots.has(String(kill.killer.steamId));
+      const message = alreadyHasPriority
         ? `BOUNTY CLAIMED: ${kill.killer.name} of ${killerFaction} eliminated ${bounty.target_name} with ${weaponName(kill.cause)}.`
         : `BOUNTY CLAIMED: ${kill.killer.name} of ${killerFaction} eliminated ${bounty.target_name} with ${weaponName(kill.cause)}. ${kill.killer.name} has earned 3 days Priority Access to our server.`;
-      const claim = bountyDb.claimBounty(bounty.id, kill, message, !alreadyVip);
+      const claim = bountyDb.claimBounty(bounty.id, kill, message, !alreadyHasPriority);
       if (!claim) return;
-      if (claim.reward) await syncReservedSlots();
+      if (claim.reward) await grantPriorityAccess(kill.killer.steamId);
       await rcon.broadcast(message);
       console.info(`[bounty-hunter] bounty ${bounty.id} claimed by ${kill.killer.steamId}`);
       return;

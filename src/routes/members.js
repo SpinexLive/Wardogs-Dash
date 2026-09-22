@@ -57,27 +57,24 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
       performanceError = 'Warcon performance data is unavailable until its API key and server ID are configured.';
     }
 
-    let vipError = null;
-    let reservedSlots = new Set();
+    let serverError = null;
     let connectedPlayers = new Map();
     if (rcon.isConfigured()) {
       try {
-        const [reserved, players] = await Promise.all([rcon.getReservedSlots(), rcon.getPlayers()]);
-        reservedSlots = new Set(reserved);
+        const players = await rcon.getPlayers();
         connectedPlayers = new Map(players.map((player) => [String(player.steamId), player]));
       } catch (err) {
-        vipError = 'Could not reach the RCON server to check live player or VIP status.';
+        serverError = 'Could not reach the RCON server to check live player status.';
       }
     }
 
-    const membersWithVip = members.map((member) => {
+    const membersWithLiveStatus = members.map((member) => {
       const steamId = steamIds[member.id] || null;
       const livePlayer = steamId ? connectedPlayers.get(String(steamId)) : null;
       const stats = steamId ? performance.get(String(steamId)) : null;
       return {
         ...member,
         steamId,
-        vip: Boolean(steamId && reservedSlots.has(steamId)),
         online: Boolean(livePlayer),
         kills: stats?.kills ?? null,
         deaths: stats?.deaths ?? null,
@@ -94,15 +91,14 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
 
     res.render('members', {
       active: 'members',
-      members: membersWithVip,
+      members: membersWithLiveStatus,
       memberStats: {
-        linkedSteam: membersWithVip.filter((member) => member.steamId).length,
-        vipEnabled: membersWithVip.filter((member) => member.vip).length,
-        online: membersWithVip.filter((member) => member.online).length,
+        linkedSteam: membersWithLiveStatus.filter((member) => member.steamId).length,
+        online: membersWithLiveStatus.filter((member) => member.online).length,
       },
       hasMemberRoles: access.memberRoleIds.length > 0,
-      vipConfigured: rcon.isConfigured(),
-      vipError,
+      serverConfigured: rcon.isConfigured(),
+      serverError,
       performanceError,
     });
   } catch (err) {

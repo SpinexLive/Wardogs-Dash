@@ -1,25 +1,23 @@
 const bountyDb = require('./bountyDb');
-const roster = require('./roster');
 const rcon = require('./rcon');
 
 const EXPIRY_CHECK_MS = 15 * 60 * 1000;
 let timer = null;
 
-async function syncReservedSlots(baseSteamIds = null) {
+async function grantPriorityAccess(steamId) {
   if (!rcon.isConfigured()) return;
-  const base = baseSteamIds || (await roster.getVipTargetSteamIds()).steamIds;
-  bountyDb.expirePriorityRewards();
-  const target = [...new Set([...base.map(String), ...bountyDb.activePrioritySteamIds().map(String)])];
-  await rcon.setReservedSlots(target);
-  return target;
+  await rcon.addReservedSlot(String(steamId));
 }
 
 function startPriorityAccessExpiry() {
   if (timer) return;
   timer = setInterval(() => {
-    syncReservedSlots().catch((err) => console.warn(`[priority-access] ${err.message}`));
+    if (!rcon.isConfigured()) return;
+    const expiredSteamIds = bountyDb.expirePriorityRewards();
+    Promise.all(expiredSteamIds.map((steamId) => rcon.removeReservedSlot(steamId)))
+      .catch((err) => console.warn(`[priority-access] ${err.message}`));
   }, EXPIRY_CHECK_MS);
   timer.unref();
 }
 
-module.exports = { syncReservedSlots, startPriorityAccessExpiry };
+module.exports = { grantPriorityAccess, startPriorityAccessExpiry };
