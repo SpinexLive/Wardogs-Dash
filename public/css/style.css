@@ -708,7 +708,7 @@ body.roster-builder-body { height: 100vh; overflow: hidden; }
 .roster-builder-body .roster-builder-layout { flex: 1; min-height: 0; overflow: hidden; }
 .roster-builder-body .player-column { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .roster-builder-body .player-list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
-.roster-builder-body .squad-column { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.roster-builder-body .squad-column { display: flex; flex-direction: column; min-height: 0; height: 100%; overflow: hidden; }
 .roster-builder-body .squad-list { flex: 1; min-height: 0; align-content: start; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
 @media (max-width: 900px) { body.roster-builder-body { height: auto; overflow: auto; }.roster-builder-body .roster-builder-page, .roster-builder-body .roster-builder-layout, .roster-builder-body .player-column { height: auto; overflow: visible; }.roster-builder-body .player-list { max-height: 340px; } }
 
