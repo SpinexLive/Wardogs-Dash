@@ -54,15 +54,16 @@ function handleDispatch(t, d) {
   if (t === 'READY') {
     sessionId = d.session_id;
     resumeUrl = d.resume_gateway_url;
-    ready = true;
     reconnectDelay = 1000;
     log('connected');
   } else if (t === 'RESUMED') {
     ready = true;
     reconnectDelay = 1000;
   } else if (t === 'GUILD_CREATE' && String(d.id) === String(config.DISCORD_GUILD_ID)) {
+    // Voice states embedded here omit guild_id since it's implied by the parent guild.
     voiceStates.clear();
-    (d.voice_states || []).forEach(applyVoiceState);
+    (d.voice_states || []).forEach((state) => applyVoiceState({ ...state, guild_id: d.id }));
+    ready = true;
   } else if (t === 'VOICE_STATE_UPDATE') {
     applyVoiceState(d);
   }
