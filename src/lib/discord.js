@@ -88,12 +88,15 @@ async function getGuildInfo() {
 }
 
 // Returns null when the member is not connected to voice; the bot needs Connect
-// permission for any voice channel whose presence it is asked to inspect.
+// permission for any voice channel whose presence it is asked to inspect. Discord
+// returns 403 (rather than the voice state) when the bot lacks Connect on the
+// channel the member is actually in, which we treat the same as "not present"
+// since it can't be the attendance channel the bot does have access to.
 async function getGuildVoiceState(userId) {
   const res = await fetch(`${API_BASE}/guilds/${config.DISCORD_GUILD_ID}/voice-states/${userId}`, {
     headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` },
   });
-  if (res.status === 404) return null;
+  if (res.status === 404 || res.status === 403) return null;
   if (!res.ok) throw new Error(`Failed to fetch Discord voice state: ${res.status}`);
   return res.json();
 }
