@@ -1,8 +1,6 @@
 const express = require('express');
 const rosterDb = require('../lib/rosterDb');
-const steamStore = require('../lib/steamStore');
 const discord = require('../lib/discord');
-const rcon = require('../lib/rcon');
 const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
@@ -47,17 +45,11 @@ router.post('/:eventId/check-attendance', requireAuth, requireDashboardAccess, a
 
     const assignments = roster.squads.flatMap((squad) => squad.assignments);
     const playerIds = [...new Set(assignments.map((player) => String(player.player_id)))];
-    const steamIds = steamStore.readSteamIds();
-    const [voice, gameResult] = await Promise.all([
-      getVoiceChannelAttendance(playerIds),
-      rcon.isConfigured() ? rcon.getPlayers().then((players) => ({ players, error: null })).catch(() => ({ players: [], error: 'Game-server attendance could not be checked.' })) : Promise.resolve({ players: [], error: 'Game-server RCON is not configured.' }),
-    ]);
-    const onlineSteamIds = new Set(gameResult.players.map((player) => String(player.steamId || player.steam_id || player.steamID || '')).filter(Boolean));
+    const voice = await getVoiceChannelAttendance(playerIds);
     const attendance = Object.fromEntries(playerIds.map((playerId) => [playerId, {
       discord: voice.present.has(playerId),
-      game: onlineSteamIds.has(String(steamIds[playerId] || '')),
     }]));
-    res.json({ attendance, warnings: [voice.error, gameResult.error].filter(Boolean) });
+    res.json({ attendance, warnings: [voice.error].filter(Boolean) });
   } catch (err) { next(err); }
 });
 

@@ -18,9 +18,8 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Attendance check failed.');
       document.querySelectorAll('.briefing-player').forEach((player) => {
-        const status = data.attendance[player.dataset.playerId] || { discord: false, game: false };
+        const status = data.attendance[player.dataset.playerId] || { discord: false };
         setDot(player.querySelector('[data-check="discord"]'), status.discord, 'Discord channel');
-        setDot(player.querySelector('[data-check="game"]'), status.game, 'Game server');
       });
       if (data.warnings?.length) { message.className = 'error-banner'; message.textContent = data.warnings.join(' '); message.hidden = false; }
     } catch (error) { message.className = 'error-banner'; message.textContent = error.message; message.hidden = false; }
