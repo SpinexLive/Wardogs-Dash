@@ -1,6 +1,6 @@
 const express = require('express');
 const rosterDb = require('../lib/rosterDb');
-const discord = require('../lib/discord');
+const discordGateway = require('../lib/discordGateway');
 const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
@@ -11,21 +11,16 @@ function isUpcoming(roster) {
   return roster && Number(roster.event_start) > Math.floor(Date.now() / 1000) - graceSeconds;
 }
 
-async function getVoiceChannelAttendance(playerIds) {
-  const present = new Set();
-  const errors = [];
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(4, playerIds.length) }, async () => {
-    while (cursor < playerIds.length) {
-      const playerId = playerIds[cursor++];
-      try {
-        const state = await discord.getGuildVoiceState(playerId);
-        if (state?.channel_id === ATTENDANCE_CHANNEL_ID) present.add(playerId);
-      } catch (err) { errors.push(err); }
-    }
-  });
-  await Promise.all(workers);
-  return { present, error: errors.length ? 'Discord channel attendance could not be fully checked.' : null };
+// Reads live voice presence from the Gateway cache (see lib/discordGateway.js) rather
+// than querying each member's voice state over REST, which 403s unless the bot has
+// Connect permission on whatever channel that member happens to currently be in.
+function getVoiceChannelAttendance(playerIds) {
+  if (!discordGateway.isReady()) {
+    return { present: new Set(), error: 'Discord channel attendance could not be checked because the bot is not connected yet.' };
+  }
+  const channelMembers = discordGateway.getChannelMembers(ATTENDANCE_CHANNEL_ID);
+  const present = new Set(playerIds.filter((playerId) => channelMembers.has(playerId)));
+  return { present, error: null };
 }
 
 router.get('/', requireAuth, requireDashboardAccess, (req, res) => {
@@ -45,7 +40,7 @@ router.post('/:eventId/check-attendance', requireAuth, requireDashboardAccess, a
 
     const assignments = roster.squads.flatMap((squad) => squad.assignments);
     const playerIds = [...new Set(assignments.map((player) => String(player.player_id)))];
-    const voice = await getVoiceChannelAttendance(playerIds);
+    const voice = getVoiceChannelAttendance(playerIds);
     const attendance = Object.fromEntries(playerIds.map((playerId) => [playerId, {
       discord: voice.present.has(playerId),
     }]));
