@@ -9,7 +9,8 @@ const router = express.Router();
 const ATTENDANCE_CHANNEL_ID = '1546197103498363031';
 
 function isUpcoming(roster) {
-  return roster && Number(roster.event_start) > Math.floor(Date.now() / 1000);
+  const graceSeconds = 3 * 60 * 60;
+  return roster && Number(roster.event_start) > Math.floor(Date.now() / 1000) - graceSeconds;
 }
 
 async function getVoiceChannelAttendance(playerIds) {

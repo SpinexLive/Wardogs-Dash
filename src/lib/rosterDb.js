@@ -79,7 +79,8 @@ function getRoster(eventId) {
   return roster;
 }
 function getUpcomingRosters() {
-  return db.prepare('SELECT event_id, event_name, event_start, updated_at FROM rosters WHERE event_start > ? ORDER BY event_start ASC').all(Math.floor(Date.now() / 1000));
+  const graceSeconds = 3 * 60 * 60;
+  return db.prepare('SELECT event_id, event_name, event_start, updated_at FROM rosters WHERE event_start > ? ORDER BY event_start ASC').all(Math.floor(Date.now() / 1000) - graceSeconds);
 }
 function getRosterDiscordMessage(eventId) { return db.prepare('SELECT * FROM roster_discord_messages WHERE event_id = ?').get(eventId) || null; }
 function setRosterDiscordMessage(eventId, channelId, messageId) { db.prepare('INSERT INTO roster_discord_messages (event_id, channel_id, message_id) VALUES (?, ?, ?) ON CONFLICT(event_id) DO UPDATE SET channel_id = excluded.channel_id, message_id = excluded.message_id').run(eventId, channelId, messageId); }
