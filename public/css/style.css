@@ -705,7 +705,7 @@ body.fixed-viewport .page--fill { height: 100vh; }
 /* The roster builder is a single desktop workspace: both the player directory and squad list scroll independently. */
 body.roster-builder-body { height: 100vh; overflow: hidden; }
 .roster-builder-body .roster-builder-page { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-.roster-builder-body .roster-builder-layout { flex: 1; min-height: 0; overflow: hidden; }
+.roster-builder-body .roster-builder-layout { flex: 1; min-height: 0; overflow: hidden; align-items: stretch; }
 .roster-builder-body .player-column { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .roster-builder-body .player-list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
 .roster-builder-body .squad-column { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
