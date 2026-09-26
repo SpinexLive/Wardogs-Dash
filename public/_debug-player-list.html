@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="en"><head><link rel="stylesheet" href="/css/style.css"></head>
+<body class="roster-builder-body">
+<main class="page roster-builder-page">
+<header class="dashboard-header"><div><h1>Debug</h1></div></header>
+<div class="roster-builder-layout">
+<aside class="dashboard-panel player-column">
+<div class="panel-heading"><div><p class="eyebrow">Player List</p><h2>20 signed up</h2></div></div>
+<input class="member-search" id="player-search" type="search" placeholder="Search players..." />
+<div class="role-filter" id="role-filter"><button data-role="all" class="active">All</button><button data-role="infantry">Infantry</button><button data-role="armour">Armour</button></div>
+<div class="player-list drag-drop-container" id="player-list">
+<script>
+const roles = ['infantry','armour','pilot','fob','commander'];
+let html = '';
+for (let i = 0; i < 20; i++) {
+  html += `<div><div class="roster-player" draggable="true" data-player-id="${i}" title="Drag to a squad slot"><img src="/images/infantry.png" alt="" /><div class="roster-player-identity"><span>³³¹Player${i}</span><small>${roles[i%5]}</small><div class="roster-player-stats"><span>K/D <strong>1.${i}</strong></span><span>KPM <strong>0.${i}</strong></span></div></div><b aria-hidden="true">⠿</b></div></div>`;
+}
+document.write(html);
+</script>
+</div>
+</aside>
+<section class="dashboard-panel squad-column"><div class="squad-topbar"><div><p class="eyebrow">Squad Builder</p><h2>Build team</h2></div></div><p class="slot-remaining">remaining</p><div class="squad-list-scroll"><div id="squad-list" class="squad-list drag-drop-container"></div></div></section>
+</div>
+</main>
+</body></html>
