@@ -3,6 +3,7 @@
   const templates = {
     infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png', showLeaderControl: true, showPlayerControl: true },
     armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, playerMax: 2 },
+    antiAir: { label: 'Anti-Air', leaderSlots: 1, playerSlots: 2, fixedSlots: 0, icon: '/images/AAGun.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0 },
     fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, showMortarControl: true, mortarMin: 0, mortarMax: 33 },
     pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png', showLeaderControl: false, showPlayerControl: true },
     recon: { label: 'Recon Team', leaderSlots: 0, playerSlots: 1, fixedSlots: 0, icon: '/images/recon.png', showLeaderControl: false, showPlayerControl: true },
@@ -10,7 +11,7 @@
   };
   const roleIcons = { infantry: '/images/infantry.png', armour: '/images/armour.png', fob: '/images/FOB.png', pilot: '/images/pilot.png', commander: '/images/wardogs.png' };
   const squadLeaderIcon = '/images/squad leader.png';
-  const squadOrder = { commander: 0, armour: 1, pilot: 2, recon: 3, infantry: 4, fob: 5 };
+  const squadOrder = { commander: 0, armour: 1, antiAir: 2, pilot: 3, recon: 4, infantry: 5, fob: 6 };
   const state = { query: '', role: 'all', squads: [] };
   let draggedPlayer = null;
   let hasUnsavedChanges = !savedRoster;

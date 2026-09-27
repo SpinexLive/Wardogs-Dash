@@ -2,8 +2,8 @@ const discord = require('./discord');
 const store = require('./store');
 const rosterDb = require('./rosterDb');
 
-const emojiKeys = ['squadLeader', 'infantry', 'armour', 'fob', 'mortar', 'pilot', 'recon', 'commander', 'pending', 'confirmed', 'declined'];
-const templateIconKey = { infantry: 'infantry', armour: 'armour', fob: 'fob', pilot: 'pilot', recon: 'recon', commander: 'commander' };
+const emojiKeys = ['squadLeader', 'infantry', 'armour', 'antiAir', 'fob', 'mortar', 'pilot', 'recon', 'commander', 'pending', 'confirmed', 'declined'];
+const templateIconKey = { infantry: 'infantry', armour: 'armour', antiAir: 'antiAir', fob: 'fob', pilot: 'pilot', recon: 'recon', commander: 'commander' };
 
 function emojiMarkup(emoji, fallback) { return emoji ? `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>` : fallback; }
 function escapeEmbed(value) { return String(value || '').replace(/([*_`~|>])/g, '\\$1'); }

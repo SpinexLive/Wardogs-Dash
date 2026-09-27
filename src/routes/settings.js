@@ -72,7 +72,7 @@ router.post('/roles', requireAuth, requireAdmin, async (req, res, next) => {
 
 router.post('/roster-discord', requireAuth, requireAdmin, (req, res, next) => {
   try {
-    const emojiKeys = ['squadLeader', 'infantry', 'armour', 'fob', 'mortar', 'pilot', 'recon', 'commander', 'pending', 'confirmed', 'declined'];
+    const emojiKeys = ['squadLeader', 'infantry', 'armour', 'antiAir', 'fob', 'mortar', 'pilot', 'recon', 'commander', 'pending', 'confirmed', 'declined'];
     const rosterEmojiMap = Object.fromEntries(emojiKeys.map((key) => [key, req.body[`emoji_${key}`] || null]));
     store.writeAccess({ ...store.readAccess(), rosterEmojiMap });
     res.redirect('/settings?saved=1');
