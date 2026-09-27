@@ -1,8 +1,7 @@
 const discord = require('./discord');
 const store = require('./store');
 const steamStore = require('./steamStore');
-const rosterDb = require('./rosterDb');
-const warcon = require('./warcon');
+const wardogs = require('./wardogs');
 
 function displayName(member) {
   return member.nick || member.user.global_name || member.user.username || 'Unknown member';
@@ -18,34 +17,33 @@ function rankedLines(rows, key, format) {
 }
 
 async function buildLeaderboardPayload() {
+  if (!wardogs.isConfigured()) throw new Error('Configure WARDOGS_API_KEY before publishing player stats.');
   const access = store.readAccess();
   const steamIds = steamStore.readSteamIds();
   const guildMembers = await discord.getGuildMembers();
   const clanMembers = guildMembers.filter((member) => member.roles.some((role) => access.memberRoleIds.includes(role)));
   const linked = clanMembers.map((member) => ({ name: displayName(member), steamId: steamIds[member.user.id] })).filter((member) => member.steamId);
   const ids = linked.map((member) => String(member.steamId));
-  const cashTotals = rosterDb.getCashTotals(ids);
-  const longestRifleHeadshots = rosterDb.getLongestRifleHeadshots(ids);
-  const performance = await warcon.getPlayerSummaries(ids);
+  const performance = await wardogs.getPlayerSummaries(ids);
   const rows = linked.map((member) => ({
     name: member.name,
-    cash: cashTotals.get(String(member.steamId)) || 0,
+    deaths: performance.get(String(member.steamId))?.deaths || 0,
+    kd: performance.get(String(member.steamId))?.kd || 0,
     kills: performance.get(String(member.steamId))?.kills || 0,
-    longestRifleHeadshot: longestRifleHeadshots.get(String(member.steamId)) || 0,
   }));
 
   return {
     embeds: [{
       color: 0xa61b1b,
       title: 'Wardogs Clan Leaderboards',
-      description: 'Live totals from the Wardogs server. Updated every 60 seconds.',
+      description: 'Community kills, deaths and K/D from Wardogs. Stats cached for up to five minutes.',
       thumbnail: { url: 'attachment://wardogs-logo.png' },
       fields: [
-        { name: '💰 Top 10 Cash Earners', value: rankedLines(rows, 'cash', (value) => `$${value.toLocaleString()}`), inline: true },
+        { name: 'Top 10 K/D', value: rankedLines(rows, 'kd', (value) => value.toFixed(2)), inline: true },
         { name: '⚔️ Top 10 Killers', value: rankedLines(rows, 'kills', (value) => `${value.toLocaleString()} kills`), inline: true },
-        { name: '🎯 Top 10 Longest Rifle Headshots', value: rankedLines(rows, 'longestRifleHeadshot', (value) => `${Math.round(value)}m`), inline: true },
+        { name: 'Top 10 Deaths', value: rankedLines(rows, 'deaths', (value) => `${value.toLocaleString()} deaths`), inline: true },
       ],
-      footer: { text: 'Wardogs Dash • Cash tracked locally • Rifle headshots from Warcon' },
+      footer: { text: 'Wardogs Dash | Stats from wardogsbot.com' },
       timestamp: new Date().toISOString(),
     }],
   };

@@ -29,12 +29,11 @@ module.exports = {
     .split(',')
     .map((id) => id.trim())
     .filter(Boolean),
-  // Optional: used for live game-server status and Bounty Hunter announcements.
+  // Optional: used for live game-server status.
   RCON_HOST: process.env.RCON_HOST || '127.0.0.1',
   RCON_PORT: process.env.RCON_PORT || '7776',
   RCON_PASSWORD: process.env.RCON_PASSWORD || '',
   RAID_HELPER_API_TOKEN: process.env.RAID_HELPER_API_TOKEN || '',
   DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY || '',
-  WARCON_API_KEY: process.env.WARCON_API_KEY || '',
-  WARCON_SERVER_ID: process.env.WARCON_SERVER_ID || '',
+  WARDOGS_API_KEY: process.env.WARDOGS_API_KEY || '',
 };

@@ -2,7 +2,7 @@ const express = require('express');
 const { getRosterEvents, getRosterEvent } = require('../lib/raidHelper');
 const rosterDb = require('../lib/rosterDb');
 const steamStore = require('../lib/steamStore');
-const warcon = require('../lib/warcon');
+const wardogs = require('../lib/wardogs');
 const { publishRoster, sendPendingReminder } = require('../lib/rosterDiscord');
 const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 const router = express.Router();
@@ -19,11 +19,11 @@ router.get('/:eventId', requireAuth, requireDashboardAccess, async (req, res, ne
     const steamIds = steamStore.readSteamIds();
     const confirmations = rosterDb.getRosterConfirmations(req.params.eventId);
     let performance = new Map();
-    if (warcon.isConfigured()) {
+    if (wardogs.isConfigured()) {
       try {
-        performance = await warcon.getPlayerSummaries(event.players.map((player) => steamIds[player.id]).filter(Boolean));
+        performance = await wardogs.getPlayerSummaries(event.players.map((player) => steamIds[player.id]).filter(Boolean));
       } catch (_) {
-        // Roster construction remains available if Warcon is temporarily unavailable.
+        // Roster construction remains available if Wardogs is temporarily unavailable.
       }
     }
     event.players = event.players.map((player) => {
@@ -31,7 +31,7 @@ router.get('/:eventId', requireAuth, requireDashboardAccess, async (req, res, ne
       return {
         ...player,
         confirmation: confirmations.get(player.id) || 'pending',
-        performance: stats ? { kd: stats.kd.toFixed(2), kpm: stats.kpm.toFixed(2) } : null,
+        performance: stats ? { kills: stats.kills, deaths: stats.deaths, kd: stats.kd.toFixed(2) } : null,
       };
     });
     event.discordPosted = Boolean(rosterDb.getRosterDiscordMessage(req.params.eventId));

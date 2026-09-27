@@ -49,28 +49,7 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(event_id, player_id)
   );
-  CREATE TABLE IF NOT EXISTS headshot_kills (
-    event_id TEXT PRIMARY KEY,
-    killer_steam_id TEXT NOT NULL,
-    distance_m REAL NOT NULL,
-    cause TEXT,
-    occurred_at TEXT
-  );
-  CREATE INDEX IF NOT EXISTS idx_headshot_kills_killer_distance ON headshot_kills(killer_steam_id, distance_m DESC);
-  CREATE TABLE IF NOT EXISTS kill_feed_sync_state (
-    name TEXT PRIMARY KEY,
-    cursor TEXT,
-    completed_at TEXT
-  );
 `);
-
-// Older dashboard installations stored only distance. Add the raw cause and re-run
-// the retained feed import once, so the rifle-only board has complete history.
-const headshotColumns = db.prepare('PRAGMA table_info(headshot_kills)').all().map((column) => column.name);
-if (!headshotColumns.includes('cause')) {
-  db.exec('ALTER TABLE headshot_kills ADD COLUMN cause TEXT');
-  db.prepare("DELETE FROM kill_feed_sync_state WHERE name = 'headshots'").run();
-}
 
 function getRoster(eventId) {
   const roster = db.prepare('SELECT * FROM rosters WHERE event_id = ?').get(eventId);
@@ -135,36 +114,6 @@ function getCashTotals(steamIds) {
   const rows = db.prepare(`SELECT steam_id, earned_cash FROM player_cash_tracking WHERE steam_id IN (${steamIds.map(() => '?').join(',')})`).all(...steamIds.map(String));
   return new Map(rows.map((row) => [row.steam_id, Number(row.earned_cash)]));
 }
-const recordHeadshotKills = db.transaction((kills) => {
-  const insert = db.prepare(`
-    INSERT INTO headshot_kills (event_id, killer_steam_id, distance_m, cause, occurred_at)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(event_id) DO UPDATE SET cause = COALESCE(headshot_kills.cause, excluded.cause)
-  `);
-  (kills || []).forEach((kill) => {
-    const isHeadshot = kill?.headshot === true || kill?.headshot === 1 || kill?.headshot === 'true';
-    const distance = Number(kill?.distanceM);
-    if (!isHeadshot || !kill?.eventId || !kill?.killer?.steamId || !Number.isFinite(distance) || distance < 0) return;
-    insert.run(String(kill.eventId), String(kill.killer.steamId), distance, kill.cause || null, kill.ts || null);
-  });
-});
-function getLongestRifleHeadshots(steamIds) {
-  if (!steamIds.length) return new Map();
-  const namedRifleCauses = ['Id.Item.Mosin', 'Id.Item.SV98', 'Id.Item.MK22', 'Id.Item.SKS', 'Id.Item.SVDM'];
-  const rows = db.prepare(`
-    SELECT killer_steam_id, MAX(distance_m) AS distance_m
-    FROM headshot_kills
-    WHERE killer_steam_id IN (${steamIds.map(() => '?').join(',')})
-      AND (cause IN (${namedRifleCauses.map(() => '?').join(',')}) OR cause GLOB 'Id.Item.WEPN_[0-9]*')
-    GROUP BY killer_steam_id
-  `).all(...steamIds.map(String), ...namedRifleCauses);
-  return new Map(rows.map((row) => [row.killer_steam_id, Number(row.distance_m)]));
-}
-function getHeadshotHistoryState() { return db.prepare("SELECT cursor, completed_at FROM kill_feed_sync_state WHERE name = 'headshots'").get() || { cursor: null, completed_at: null }; }
-function updateHeadshotHistoryState(cursor, complete = false) {
-  db.prepare("INSERT INTO kill_feed_sync_state (name, cursor, completed_at) VALUES ('headshots', ?, ?) ON CONFLICT(name) DO UPDATE SET cursor = excluded.cursor, completed_at = excluded.completed_at").run(cursor || null, complete ? new Date().toISOString() : null);
-}
-
 // A session is a complete server match. A new session begins when the map/experience
 // changes or the server's match clock resets. The first observation is a baseline so
 // existing mid-match scoreboard values are never counted twice.
@@ -223,4 +172,4 @@ function getMatchStats(steamIds) {
   }]));
 }
 
-module.exports = { getRoster, getUpcomingRosters, hasRoster, saveRoster, deleteRoster, getRosterDiscordMessage, setRosterDiscordMessage, getRosterDiscordReminder, setRosterDiscordReminder, getRosterConfirmations, setRosterConfirmation, recordCashSnapshot, recordHeadshotKills, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getLongestRifleHeadshots, getHeadshotHistoryState, updateHeadshotHistoryState, getMatchStats };
+module.exports = { getRoster, getUpcomingRosters, hasRoster, saveRoster, deleteRoster, getRosterDiscordMessage, setRosterDiscordMessage, getRosterDiscordReminder, setRosterDiscordReminder, getRosterConfirmations, setRosterConfirmation, recordCashSnapshot, recordMatchSnapshot, getCommunityCashTotal, getCashTotals, getMatchStats };

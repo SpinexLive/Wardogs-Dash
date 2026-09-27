@@ -66,7 +66,7 @@
     const confirmationIcons = { confirmed: '/images/accept.png', declined: '/images/decline.png', pending: '/images/pending.png' };
     const confirmation = player.confirmation || 'pending';
     const performance = !compact
-      ? `<div class="roster-player-stats"><span>K/D <strong>${player.performance?.kd || '—'}</strong></span><span>KPM <strong>${player.performance?.kpm || '—'}</strong></span></div>`
+      ? `<div class="roster-player-stats"><span>K/D <strong>${player.performance?.kd || '—'}</strong></span><span>Kills <strong>${player.performance?.kills ?? "?"}</strong></span><span>Deaths <strong>${player.performance?.deaths ?? "?"}</strong></span></div>`
       : '';
     const status = compact ? `<img class="roster-player-status" src="${confirmationIcons[confirmation] || confirmationIcons.pending}" alt="${confirmation} event acceptance" title="${confirmation}" />` : '';
     return `<div class="roster-player ${compact ? `roster-player--compact roster-player--${confirmation}` : ''}" draggable="true" data-player-id="${player.id}" title="${compact ? 'Double-click to return this player to the player list' : 'Drag to a squad slot'}"><img src="${icon}" alt="" /><div class="roster-player-identity"><span>${escapeHtml(player.name)}</span><small>${player.role}</small>${performance}</div>${status}<b aria-hidden="true">⠿</b></div>`;

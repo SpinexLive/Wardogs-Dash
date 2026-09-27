@@ -5,7 +5,7 @@ const store = require('./store');
 const steamStore = require('./steamStore');
 const rcon = require('./rcon');
 const rosterDb = require('./rosterDb');
-const warcon = require('./warcon');
+const wardogs = require('./wardogs');
 
 const OPERATIONS_FILE = path.join(__dirname, '..', '..', 'data', 'operations.json');
 
@@ -40,17 +40,12 @@ function calculateClanAverages(performance) {
   const totals = values.reduce((total, player) => ({
     kills: total.kills + player.kills,
     deaths: total.deaths + player.deaths,
-    sessions: total.sessions + player.sessions,
-    minutes: total.minutes + player.minutes,
-  }), { kills: 0, deaths: 0, sessions: 0, minutes: 0 });
+  }), { kills: 0, deaths: 0 });
   return {
     tracked: values.length,
     kills: totals.kills / values.length,
     deaths: totals.deaths / values.length,
-    sessions: totals.sessions / values.length,
-    minutes: totals.minutes / values.length,
     kd: totals.deaths ? totals.kills / totals.deaths : totals.kills,
-    kpm: totals.minutes ? totals.kills / totals.minutes : 0,
   };
 }
 
@@ -61,11 +56,11 @@ async function getDashboardMetrics() {
   const roster = access.memberRoleIds.length ? guildMembers.filter((member) => member.roles.some((id) => access.memberRoleIds.includes(id))) : [];
   const steamLinked = roster.filter((member) => steamIds[member.user.id]).length;
   let clanAverages = null;
-  if (warcon.isConfigured()) {
+  if (wardogs.isConfigured()) {
     try {
-      clanAverages = calculateClanAverages(await warcon.getPlayerSummaries(roster.map((member) => steamIds[member.user.id]).filter(Boolean)));
+      clanAverages = calculateClanAverages(await wardogs.getPlayerSummaries(roster.map((member) => steamIds[member.user.id]).filter(Boolean)));
     } catch (_) {
-      // Performance data is supplementary; a Warcon outage must not block the dashboard.
+      // Performance data is supplementary; a Wardogs outage must not block the dashboard.
     }
   }
   const attendance = newestFirst(operations.attendance);

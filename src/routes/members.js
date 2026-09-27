@@ -3,20 +3,11 @@ const discord = require('../lib/discord');
 const store = require('../lib/store');
 const steamStore = require('../lib/steamStore');
 const rcon = require('../lib/rcon');
-const rosterDb = require('../lib/rosterDb');
-const warcon = require('../lib/warcon');
+const wardogs = require('../lib/wardogs');
 const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
 const MAX_STEAM_ID_LENGTH = 64;
-
-function formatPlaytime(minutes) {
-  const total = Math.max(0, Math.floor(Number(minutes) || 0));
-  const days = Math.floor(total / 1440);
-  const hours = Math.floor((total % 1440) / 60);
-  const remainingMinutes = total % 60;
-  return days ? `${days}d ${hours}h ${remainingMinutes}m` : `${hours}h ${remainingMinutes}m`;
-}
 
 function discordAvatarUrl(user) {
   if (user.avatar) return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=64`;
@@ -44,17 +35,16 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
     const access = store.readAccess();
     const members = await loadMembers(access.memberRoleIds);
     const steamIds = steamStore.readSteamIds();
-    const cashTotals = rosterDb.getCashTotals(Object.values(steamIds));
     let performance = new Map();
     let performanceError = null;
-    if (warcon.isConfigured()) {
+    if (wardogs.isConfigured()) {
       try {
-        performance = await warcon.getPlayerSummaries(Object.values(steamIds));
+        performance = await wardogs.getPlayerSummaries(members.map((member) => steamIds[member.id]).filter(Boolean));
       } catch (_) {
-        performanceError = 'Warcon player performance data is temporarily unavailable.';
+        performanceError = 'Wardogs player performance data is temporarily unavailable.';
       }
     } else {
-      performanceError = 'Warcon performance data is unavailable until its API key and server ID are configured.';
+      performanceError = 'Wardogs performance data is unavailable until its API key is configured.';
     }
 
     let serverError = null;
@@ -78,12 +68,7 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
         online: Boolean(livePlayer),
         kills: stats?.kills ?? null,
         deaths: stats?.deaths ?? null,
-        sessions: stats?.sessions ?? null,
-        minutes: stats?.minutes ?? null,
-        playtime: stats ? formatPlaytime(stats.minutes) : null,
         kd: stats ? stats.kd.toFixed(2) : null,
-        kpm: stats ? stats.kpm.toFixed(2) : null,
-        cashEarned: steamId ? (cashTotals.get(String(steamId)) || 0) : null,
         isRecruit: Boolean(access.recruitRankRoleId && member.roles.includes(access.recruitRankRoleId)),
         isMemberRank: Boolean(access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)),
       };

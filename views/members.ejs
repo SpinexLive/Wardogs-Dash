@@ -39,24 +39,16 @@
               <th><button type="button" class="member-sort" data-sort-key="kills">Kills</button></th>
               <th><button type="button" class="member-sort" data-sort-key="deaths">Deaths</button></th>
               <th><button type="button" class="member-sort" data-sort-key="kd">K/D</button></th>
-              <th><button type="button" class="member-sort" data-sort-key="sessions">Sessions</button></th>
-              <th><button type="button" class="member-sort" data-sort-key="minutes">Playtime</button></th>
-              <th><button type="button" class="member-sort" data-sort-key="kpm">KPM</button></th>
-              <th><button type="button" class="member-sort" data-sort-key="cash">Cash earned</button></th>
             </tr></thead>
             <tbody id="member-rows">
               <% members.forEach((member) => { %>
-                <tr class="member-row <%= member.online ? 'member-row--online' : '' %>" data-member="<%= member.nickname.toLowerCase() %>" data-kills="<%= member.kills ?? -1 %>" data-deaths="<%= member.deaths ?? -1 %>" data-kd="<%= member.kd ?? -1 %>" data-sessions="<%= member.sessions ?? -1 %>" data-minutes="<%= member.minutes ?? -1 %>" data-kpm="<%= member.kpm ?? -1 %>" data-cash="<%= member.cashEarned ?? -1 %>">
+                <tr class="member-row <%= member.online ? 'member-row--online' : '' %>" data-member="<%= member.nickname.toLowerCase() %>" data-kills="<%= member.kills ?? -1 %>" data-deaths="<%= member.deaths ?? -1 %>" data-kd="<%= member.kd ?? -1 %>">
                   <td><div class="member-identity"><img class="member-avatar" src="<%= member.avatar %>" alt="" /><div><strong><%= member.nickname %></strong><div class="member-ranks"><% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %><% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %><% if (!member.isRecruit && !member.isMemberRank) { %><span class="rank-badge rank-unassigned">Unranked</span><% } %></div></div></div></td>
                   <td><span class="server-presence <%= member.online ? 'server-presence--online' : '' %>"><i></i><%= member.online ? 'On server' : 'Offline' %></span></td>
                   <td><button type="button" class="steam-id-btn steam-id-btn--table <%= member.steamId ? 'steam-id-btn--linked' : '' %>" data-dialog="steam-dialog-<%= member.id %>"><span class="steam-id-dot"></span><%= member.steamId || 'Link Steam ID' %></button></td>
                   <td class="performance-value"><%= member.kills === null ? '—' : member.kills.toLocaleString() %></td>
                   <td class="performance-value"><%= member.deaths === null ? '—' : member.deaths.toLocaleString() %></td>
                   <td class="performance-value performance-value--kd"><%= member.kd ?? '—' %></td>
-                  <td class="performance-value"><%= member.sessions === null ? '—' : member.sessions.toLocaleString() %></td>
-                  <td class="performance-value"><%= member.playtime ?? '—' %></td>
-                  <td class="performance-value performance-value--kd"><%= member.kpm ?? '—' %></td>
-                  <td class="cash-value"><%= member.cashEarned === null ? '—' : '$' + member.cashEarned.toLocaleString() %></td>
                 </tr>
               <% }) %>
             </tbody>

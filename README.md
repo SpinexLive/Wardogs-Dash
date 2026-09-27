@@ -64,6 +64,24 @@ data/operations.json  optional attendance, match, and roster-change records
 data/sessions/        session store files (gitignored, created on first run)
 ```
 
+## Wardogs player stats
+
+Create a key with **read** scope in [Wardogs Setup > API & webhooks](https://wardogsbot.com/developers), then set this in your server's `.env`:
+
+```env
+WARDOGS_API_KEY=wdk_your_key_here
+```
+
+Remove the obsolete `WARCON_API_KEY` and `WARCON_SERVER_ID` entries. No Wardogs server ID is needed: player totals are community-wide. Existing Discord-to-Steam links are reused. The API reports the new provider's history; this change does not import historical Warcon data.
+
+Redeploy with `docker compose up -d --build wardogs-dash`, or restart the Node process. Docker already reads `.env`. Kills, deaths and K/D appear on Members, the dashboard, rosters and the optional Discord leaderboard. Stats are cached for five minutes; K/D is kills when deaths are zero. RCON remains separate for live presence and the existing cash counter.
+
+Headshot tracking, bounty creation and 50v50 controls have been removed. Existing database history is preserved. Previously awarded bounty priority access still expires through the legacy cleanup worker. Removing 50v50 controls does not reset game-server settings previously applied by that feature; adjust those in your provider dashboard if needed.
+
+The public OpenAPI schema does not specify the stats response fields. The adapter accepts explicit kills/deaths fields in common response containers and reports unavailable data for unknown shapes. Verify a linked member after adding the key; no authenticated live check was possible during this migration.
+
+Run adapter checks with `node --test`.
+
 ## Raid-Helper roster events
 
 The `/roster` page fetches events server-side from Raid-Helper v4 using the existing
