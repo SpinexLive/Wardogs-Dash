@@ -1,3 +1,4 @@
+const cachedRead = require('./readCache');
 const config = require('../config');
 
 // Wardogs RCON HTTP API (unofficial): https://wardogs.tech/rcon-reference
@@ -143,5 +144,5 @@ async function broadcast(message) {
   return data;
 }
 
-module.exports = { isConfigured, getReservedSlots, getServerStatus, getPlayers, getCapabilities, addReservedSlot, removeReservedSlot, setServerName, setTeamEnforcementConfig, setPlayerFaction, broadcast };
+module.exports = { isConfigured, getReservedSlots, getServerStatus: cachedRead(getServerStatus), getPlayers: cachedRead(getPlayers), getCapabilities, addReservedSlot, removeReservedSlot, setServerName, setTeamEnforcementConfig, setPlayerFaction, broadcast };
 

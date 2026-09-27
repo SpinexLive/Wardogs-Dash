@@ -36,7 +36,7 @@ async function buildLeaderboardPayload() {
     embeds: [{
       color: 0xa61b1b,
       title: 'Wardogs Clan Leaderboards',
-      description: 'Community kills, deaths and K/D from Wardogs. Stats cached for up to five minutes.',
+      description: 'Community kills, deaths and K/D from Wardogs. Stats refresh daily at 03:00 GMT.',
       thumbnail: { url: 'attachment://wardogs-logo.png' },
       fields: [
         { name: 'Top 10 K/D', value: rankedLines(rows, 'kd', (value) => value.toFixed(2)), inline: true },

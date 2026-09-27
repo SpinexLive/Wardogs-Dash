@@ -1,3 +1,4 @@
+const cachedRead = require('./readCache');
 const config = require('../config');
 const fs = require('fs');
 const path = require('path');
@@ -67,7 +68,7 @@ async function getGuildMembers() {
   for (;;) {
     const res = await fetch(
       `${API_BASE}/guilds/${config.DISCORD_GUILD_ID}/members?limit=1000&after=${after}`,
-      { headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` } }
+      { headers: { Authorization: `Bot ${config.DISCORD_BOT_TOKEN}` }, signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) throw new Error(`Failed to fetch guild members: ${res.status}`);
     const batch = await res.json();
@@ -186,7 +187,7 @@ module.exports = {
   getGuildMember,
   getGuildVoiceState,
   getGuildRoles,
-  getGuildMembers,
+  getGuildMembers: cachedRead(getGuildMembers, { freshMs: 60_000, maxAgeMs: 300_000 }),
   getGuildInfo,
   getGuildTextChannels,
   getGuildEmojis,

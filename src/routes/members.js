@@ -47,6 +47,10 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
       performanceError = 'Wardogs performance data is unavailable until its API key is configured.';
     }
 
+    if (wardogs.isConfigured() && !performance.size && members.some((member) => steamIds[member.id])) {
+      performanceError = 'No saved player stats yet. Stats refresh daily at 03:00 GMT.';
+    }
+
     let serverError = null;
     let connectedPlayers = new Map();
     if (rcon.isConfigured()) {

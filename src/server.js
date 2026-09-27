@@ -7,6 +7,7 @@ const path = require('path');
 const config = require('./config');
 const store = require('./lib/store');
 const steamStore = require('./lib/steamStore');
+const { startDailyStats } = require('./lib/dailyStats');
 const discordGateway = require('./lib/discordGateway');
 const { startCashTracking } = require('./lib/cashTracker');
 const { startPriorityAccessExpiry } = require('./lib/priorityAccess');
@@ -23,6 +24,7 @@ const SESSIONS_DIR = path.join(__dirname, '..', 'data', 'sessions');
 
 store.ensureStore(config.ADMIN_ROLE_IDS);
 steamStore.ensureStore();
+startDailyStats();
 fs.mkdirSync(SESSIONS_DIR, { recursive: true });
 discordGateway.connect();
 startCashTracking();

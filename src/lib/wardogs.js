@@ -1,9 +1,7 @@
 const config = require('../config');
 
 const API_URL = 'https://wardogsbot.com/api/v1';
-const CACHE_MS = 5 * 60 * 1000;
-const cache = new Map();
-const pending = new Map();
+const snapshots = require('./statsSnapshot');
 let requestTimes = [];
 let blockedUntil = 0;
 
@@ -45,36 +43,26 @@ async function fetchSummary(id) {
   return parseSummary(data);
 }
 
-function getPlayerSummary(id) {
-  const cached = cache.get(id);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_MS) return Promise.resolve(cached.value);
-  if (pending.has(id)) return pending.get(id);
-  const request = fetchSummary(id).then((value) => {
-    cache.set(id, { value, fetchedAt: Date.now() });
-    return value;
-  }).finally(() => pending.delete(id));
-  pending.set(id, request);
-  return request;
-}
 
+// Page and leaderboard reads never make provider requests.
 async function getPlayerSummaries(steamIds) {
-  if (!isConfigured()) return new Map();
-  const ids = [...new Set(steamIds.map(String))].filter((id) => /^\d{17}$/.test(id));
-  const summaries = new Map();
-  let cursor = 0;
-  let failure;
-  await Promise.all(Array.from({ length: Math.min(4, ids.length) }, async () => {
-    while (cursor < ids.length && !failure) {
-      const id = ids[cursor++];
-      try {
-        const value = await getPlayerSummary(id);
-        if (value) summaries.set(id, value);
-      } catch (error) { failure = error; }
-    }
-  }));
-  // Do not show a partial clan aggregate or publish an incomplete leaderboard.
-  if (failure) throw failure;
-  return summaries;
+  const saved = snapshots.read().players || {};
+  return new Map([...new Set(steamIds.map(String))].filter((id) => saved[id]).map((id) => [id, saved[id]]));
 }
 
-module.exports = { isConfigured, getPlayerSummaries };
+async function refreshPlayerSummaries(steamIds) {
+  const ids = [...new Set(steamIds.map(String))].filter((id) => /^\d{17}$/.test(id));
+  const players = {};
+  for (const id of ids) {
+    // Pace large rosters below 100 requests/minute, within this one daily run.
+    requestTimes = requestTimes.filter((time) => Date.now() - time < 60_000);
+    if (requestTimes.length >= 100) {
+      await new Promise((resolve) => setTimeout(resolve, Math.max(1, requestTimes[0] + 60_001 - Date.now())));
+    }
+    const value = await fetchSummary(id);
+    if (value) players[id] = value;
+  }
+  return players;
+}
+
+module.exports = { isConfigured, getPlayerSummaries, refreshPlayerSummaries };
