@@ -9,7 +9,7 @@
     recon: { label: 'Recon Team', leaderSlots: 0, playerSlots: 1, fixedSlots: 0, icon: '/images/recon.png', showLeaderControl: false, showPlayerControl: true },
     commander: { label: 'Commander', leaderSlots: 0, playerSlots: 0, fixedSlots: 1, icon: '/images/wardogs.png', showLeaderControl: false, showPlayerControl: false },
   };
-  const roleIcons = { infantry: '/images/infantry.png', armour: '/images/armour.png', antiAir: '/images/AAGun.png', fob: '/images/FOB.png', pilot: '/images/pilot.png', commander: '/images/wardogs.png' };
+  const roleIcons = { infantry: '/images/infantry.png', armour: '/images/armour.png', antiAir: '/images/AAGun.png', fob: '/images/FOB.png', pilot: '/images/pilot.png', recon: '/images/recon.png', commander: '/images/wardogs.png' };
   const squadLeaderIcon = '/images/squad leader.png';
   const squadOrder = { commander: 0, armour: 1, antiAir: 2, pilot: 3, recon: 4, infantry: 5, fob: 6 };
   const state = { query: '', role: 'all', squads: [] };

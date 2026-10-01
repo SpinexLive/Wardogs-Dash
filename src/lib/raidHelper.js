@@ -1,6 +1,6 @@
 const config = require('../config');
 const API_BASE = 'https://raid-helper.xyz/api/v4';
-const roleMap = { infantry: 'infantry', armour: 'armour', pilot: 'pilot', fob: 'fob', commander: 'commander', antiair: 'antiAir', 'anti-air': 'antiAir', aa: 'antiAir' };
+const roleMap = { infantry: 'infantry', armour: 'armour', pilot: 'pilot', fob: 'fob', commander: 'commander', recon: 'recon', antiair: 'antiAir', 'anti-air': 'antiAir', aa: 'antiAir' };
 
 async function request(path) {
   if (!config.RAID_HELPER_API_TOKEN) throw new Error('Raid-Helper API token is not configured.');
@@ -26,10 +26,15 @@ async function getRosterEvents() {
   const events = await Promise.all(matches.map(async (event) => formatEvent(await request(`/events/${encodeURIComponent(event.id)}`))));
   return events.sort((a, b) => a.startTime - b.startTime);
 }
-function normaliseRole(signup) { return roleMap[String(signup.cClassName || signup.roleName || '').toLowerCase()] || null; }
+// Falls back to the raw sign-up class so unmapped roles still appear in the roster
+// instead of silently vanishing; only tentative/absence sign-ups should be excluded.
+function normaliseRole(signup) {
+  const raw = String(signup.cClassName || signup.roleName || '').toLowerCase();
+  return roleMap[raw] || raw || 'infantry';
+}
 async function getRosterEvent(eventId) {
   const event = await request(`/events/${encodeURIComponent(eventId)}`);
   if (!isMatch(event)) throw new Error('This event is not an eligible match.');
-  return { ...formatEvent(event), channelId: String(event.channelId || event.channel?.id || event.channel_id || ''), players: (event.signUps || event.signups || []).filter(isRosterEligible).map((signup) => ({ id: String(signup.userId || signup.id), name: signup.name || 'Unknown player', role: normaliseRole(signup) })).filter((player) => player.role) };
+  return { ...formatEvent(event), channelId: String(event.channelId || event.channel?.id || event.channel_id || ''), players: (event.signUps || event.signups || []).filter(isRosterEligible).map((signup) => ({ id: String(signup.userId || signup.id), name: signup.name || 'Unknown player', role: normaliseRole(signup) })) };
 }
 module.exports = { getRosterEvents, getRosterEvent };
