@@ -14,6 +14,7 @@
   const squadOrder = { commander: 0, armour: 1, antiAir: 2, pilot: 3, recon: 4, infantry: 5, fob: 6 };
   const state = { query: '', role: 'all', squads: [] };
   let draggedPlayer = null;
+  let selectedPlayerId = null;
   let hasUnsavedChanges = !savedRoster;
   let isDiscordPosted = Boolean(match.discordPosted);
   const saveButton = document.getElementById('save-roster');
@@ -54,6 +55,19 @@
   function totalSlots() { return state.squads.reduce((total, squad) => total + capacity(squad), 0); }
   function assigned() { return state.squads.reduce((total, squad) => total + squad.assignments.filter(Boolean).length, 0); }
   function unassign(playerId) { state.squads.forEach((squad) => { squad.assignments = squad.assignments.map((player) => player?.id === playerId ? null : player); }); }
+  // Click-to-select is a keyboard/touch-friendly alternative to drag-and-drop.
+  function findPlayerById(id) { return match.players.find((player) => player.id === id) || state.squads.flatMap((squad) => squad.assignments).find((player) => player?.id === id) || null; }
+  function selectPlayer(id) { selectedPlayerId = selectedPlayerId === id ? null : id; render(); }
+  function assignSelected(squad, slot) {
+    if (!selectedPlayerId) return;
+    const player = findPlayerById(selectedPlayerId);
+    if (!player) return;
+    unassign(player.id);
+    squad.assignments[slot] = player;
+    selectedPlayerId = null;
+    markDirty();
+    render();
+  }
   function addTemplate(template) {
     const spec = templates[template];
     if (totalSlots() + spec.leaderSlots + spec.playerSlots + spec.fixedSlots > 33) return render();
@@ -69,7 +83,8 @@
       ? `<div class="roster-player-stats"><span>K/D <strong>${player.performance?.kd || '—'}</strong></span></div>`
       : '';
     const status = compact ? `<img class="roster-player-status" src="${confirmationIcons[confirmation] || confirmationIcons.pending}" alt="${confirmation} event acceptance" title="${confirmation}" />` : '';
-    return `<div class="roster-player ${compact ? `roster-player--compact roster-player--${confirmation}` : ''}" draggable="true" data-player-id="${player.id}" title="${compact ? 'Double-click to return this player to the player list' : 'Drag to a squad slot'}"><img src="${icon}" alt="" /><div class="roster-player-identity"><span>${escapeHtml(player.name)}</span><small>${player.role}</small>${performance}</div>${status}<b aria-hidden="true">⠿</b></div>`;
+    const selected = player.id === selectedPlayerId;
+    return `<div class="roster-player ${compact ? `roster-player--compact roster-player--${confirmation}` : ''} ${selected ? 'is-selected' : ''}" draggable="true" tabindex="0" role="button" aria-pressed="${selected}" data-player-id="${player.id}" title="${compact ? 'Double-click to return this player to the player list' : 'Drag, or click to select, then click a slot to assign'}"><img src="${icon}" alt="" /><div class="roster-player-identity"><span>${escapeHtml(player.name)}</span><small>${player.role}</small>${performance}</div>${status}<b aria-hidden="true">⠿</b></div>`;
   }
   function escapeHtml(value) { const node = document.createElement('div'); node.textContent = value; return node.innerHTML; }
   function renderPlayers() {
@@ -84,9 +99,9 @@
       if (squad.template === 'fob' && slot >= squad.leaderSlots + squad.playerSlots) return '/images/artillery.png';
       return squad.template === 'commander' ? roleIcons.commander : spec.icon;
     };
-    const slots = Array.from({ length: capacity(squad) }, (_, slot) => `<div class="squad-slot-wrapper ${squad.assignments[slot] ? 'is-filled' : ''}" data-slot="${slot}">${squad.assignments[slot]
+    const slots = Array.from({ length: capacity(squad) }, (_, slot) => `<div class="squad-slot-wrapper ${squad.assignments[slot] ? 'is-filled' : ''} ${!squad.assignments[slot] && selectedPlayerId ? 'is-selectable' : ''}" data-slot="${slot}" ${!squad.assignments[slot] ? 'tabindex="0" role="button"' : ''}>${squad.assignments[slot]
       ? playerItem(squad.assignments[slot], true, slotIcon(slot))
-      : `<div class="squad-slot"><img src="${slotIcon(slot)}" alt="" /><span>Drop player here</span></div>`}</div>`).join('');
+      : `<div class="squad-slot"><img src="${slotIcon(slot)}" alt="" /><span>${selectedPlayerId ? 'Click to assign' : 'Drop player here'}</span></div>`}</div>`).join('');
     const controls = [
       spec.showLeaderControl ? `<label>Squad Leaders<input type="number" min="0" max="33" value="${squad.leaderSlots}" data-field="leaderSlots" data-index="${index}" /></label>` : '',
       spec.showPlayerControl ? `<label>Players<input type="number" min="${spec.playerMin ?? 0}" max="${spec.playerMax ?? 33}" value="${squad.playerSlots}" data-field="playerSlots" data-index="${index}" /></label>` : '',
@@ -125,6 +140,18 @@
     });
     document.querySelectorAll('.squad-slot-wrapper .roster-player').forEach((element) => {
       element.addEventListener('dblclick', () => { unassign(element.dataset.playerId); markDirty(); render(); });
+    });
+    // Click/keyboard alternative to drag-and-drop: click (or Enter/Space) a player
+    // to select them, then click (or Enter/Space) an empty slot to assign them there.
+    document.querySelectorAll('.roster-player[draggable]').forEach((element) => {
+      const activate = (e) => { e.stopPropagation(); selectPlayer(element.dataset.playerId); };
+      element.addEventListener('click', activate);
+      element.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(e); } });
+    });
+    document.querySelectorAll('.squad-slot-wrapper:not(.is-filled)').forEach((zone) => {
+      const activate = () => { const squad = state.squads.find((item) => item.key === zone.closest('[data-squad-key]').dataset.squadKey); assignSelected(squad, Number(zone.dataset.slot)); };
+      zone.addEventListener('click', activate);
+      zone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
     });
     const playerList = document.getElementById('player-list');
     playerList.addEventListener('dragover', (e) => e.preventDefault());
