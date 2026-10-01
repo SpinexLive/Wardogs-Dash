@@ -36,8 +36,9 @@ async function getRosterEvents() {
   const payload = await request(`/servers/${encodeURIComponent(config.DISCORD_GUILD_ID)}/events`);
   const summaries = payload.postedEvents || payload.events || [];
   const matches = summaries.filter((event) => isMatch(event) && eventStart(event) >= Math.floor(Date.now() / 1000));
-  const events = await Promise.all(matches.map(async (event) => formatEvent(await request(`/events/${encodeURIComponent(event.id)}`))));
-  return events.sort((a, b) => a.startTime - b.startTime);
+  // formatEvent already falls back to the summary's approximate signUpCount, so the
+  // list page never needs to fetch every event's full (and much larger) signup payload.
+  return matches.map(formatEvent).sort((a, b) => a.startTime - b.startTime);
 }
 // Falls back to the raw sign-up class so unmapped roles still appear in the roster
 // instead of silently vanishing; only tentative/absence sign-ups should be excluded.
