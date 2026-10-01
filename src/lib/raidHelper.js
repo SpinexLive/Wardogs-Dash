@@ -1,6 +1,6 @@
 const config = require('../config');
 const API_BASE = 'https://raid-helper.xyz/api/v4';
-const roleMap = { infantry: 'infantry', armour: 'armour', pilot: 'pilot', fob: 'fob', commander: 'commander', recon: 'recon', antiair: 'antiAir', 'anti-air': 'antiAir', aa: 'antiAir' };
+const roleMap = { infantry: 'infantry', armour: 'armour', pilot: 'pilot', fob: 'fob', commander: 'commander', recon: 'recon', antiair: 'antiAir', aa: 'antiAir' };
 
 // Raid-Helper's own response time is what actually makes the player list feel slow;
 // steam ID lookups and stat checks are local and near-instant. Cache briefly so
@@ -42,9 +42,12 @@ async function getRosterEvents() {
 }
 // Falls back to the raw sign-up class so unmapped roles still appear in the roster
 // instead of silently vanishing; only tentative/absence sign-ups should be excluded.
+// Spaces/hyphens/underscores are stripped before matching so 'Anti Air', 'anti-air',
+// and 'AntiAir' all resolve to the same canonical role.
 function normaliseRole(signup) {
-  const raw = String(signup.cClassName || signup.roleName || '').toLowerCase();
-  return roleMap[raw] || raw || 'infantry';
+  const raw = String(signup.cClassName || signup.roleName || '').toLowerCase().trim();
+  const key = raw.replace(/[\s_-]+/g, '');
+  return roleMap[key] || key || 'infantry';
 }
 async function getRosterEvent(eventId) {
   const event = await request(`/events/${encodeURIComponent(eventId)}`);

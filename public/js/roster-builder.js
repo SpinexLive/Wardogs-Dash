@@ -3,7 +3,7 @@
   const templates = {
     infantry: { label: 'Infantry Squad', leaderSlots: 1, playerSlots: 4, fixedSlots: 0, icon: '/images/infantry.png', showLeaderControl: true, showPlayerControl: true },
     armour: { label: 'Armour Crew', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/armour.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, playerMax: 2 },
-    antiAir: { label: 'Anti-Air', leaderSlots: 1, playerSlots: 2, fixedSlots: 0, icon: '/images/AAGun.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0 },
+    antiAir: { label: 'Anti-Air', leaderSlots: 1, playerSlots: 1, fixedSlots: 0, icon: '/images/AAGun.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0 },
     fob: { label: 'FOB Team', leaderSlots: 1, playerSlots: 1, fixedSlots: 1, icon: '/images/FOB.png', showLeaderControl: false, showPlayerControl: true, playerMin: 0, showMortarControl: true, mortarMin: 0, mortarMax: 33 },
     pilot: { label: 'Pilot Crew', leaderSlots: 0, playerSlots: 3, fixedSlots: 0, icon: '/images/pilot.png', showLeaderControl: false, showPlayerControl: true },
     recon: { label: 'Recon Team', leaderSlots: 0, playerSlots: 1, fixedSlots: 0, icon: '/images/recon.png', showLeaderControl: false, showPlayerControl: true },
@@ -66,7 +66,7 @@
     const confirmationIcons = { confirmed: '/images/accept.png', declined: '/images/decline.png', pending: '/images/pending.png' };
     const confirmation = player.confirmation || 'pending';
     const performance = !compact
-      ? `<div class="roster-player-stats"><span>K/D <strong>${player.performance?.kd || '—'}</strong></span><span>Kills <strong>${player.performance?.kills ?? "?"}</strong></span><span>Deaths <strong>${player.performance?.deaths ?? "?"}</strong></span></div>`
+      ? `<div class="roster-player-stats"><span>K/D <strong>${player.performance?.kd || '—'}</strong></span></div>`
       : '';
     const status = compact ? `<img class="roster-player-status" src="${confirmationIcons[confirmation] || confirmationIcons.pending}" alt="${confirmation} event acceptance" title="${confirmation}" />` : '';
     return `<div class="roster-player ${compact ? `roster-player--compact roster-player--${confirmation}` : ''}" draggable="true" data-player-id="${player.id}" title="${compact ? 'Double-click to return this player to the player list' : 'Drag to a squad slot'}"><img src="${icon}" alt="" /><div class="roster-player-identity"><span>${escapeHtml(player.name)}</span><small>${player.role}</small>${performance}</div>${status}<b aria-hidden="true">⠿</b></div>`;
