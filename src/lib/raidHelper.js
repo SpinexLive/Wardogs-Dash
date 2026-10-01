@@ -2,11 +2,24 @@ const config = require('../config');
 const API_BASE = 'https://raid-helper.xyz/api/v4';
 const roleMap = { infantry: 'infantry', armour: 'armour', pilot: 'pilot', fob: 'fob', commander: 'commander', recon: 'recon', antiair: 'antiAir', 'anti-air': 'antiAir', aa: 'antiAir' };
 
+// Raid-Helper's own response time is what actually makes the player list feel slow;
+// steam ID lookups and stat checks are local and near-instant. Cache briefly so
+// repeat page loads (and the roster list's per-event lookups) don't re-pay that cost.
+const CACHE_TTL_MS = 15_000;
+const cache = new Map();
+
 async function request(path) {
   if (!config.RAID_HELPER_API_TOKEN) throw new Error('Raid-Helper API token is not configured.');
-  const response = await fetch(`${API_BASE}${path}`, { headers: { Authorization: config.RAID_HELPER_API_TOKEN, Accept: 'application/json' } });
+  const cached = cache.get(path);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { Authorization: config.RAID_HELPER_API_TOKEN, Accept: 'application/json' },
+    signal: AbortSignal.timeout(8000),
+  });
   if (!response.ok) throw new Error(`Raid-Helper API returned ${response.status}.`);
-  return response.json();
+  const data = await response.json();
+  cache.set(path, { data, expiresAt: Date.now() + CACHE_TTL_MS });
+  return data;
 }
 function eventName(event) { return String(event.title || event.name || event.displayTitle || 'Untitled match'); }
 function eventStart(event) { return Number(event.startTime || event.start || event.time || 0); }
