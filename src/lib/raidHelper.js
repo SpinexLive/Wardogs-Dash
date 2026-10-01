@@ -1,6 +1,6 @@
 const config = require('../config');
 const API_BASE = 'https://raid-helper.xyz/api/v4';
-const roleMap = { infantry: 'infantry', armour: 'armour', pilot: 'pilot', fob: 'fob', commander: 'commander' };
+const roleMap = { infantry: 'infantry', armour: 'armour', pilot: 'pilot', fob: 'fob', commander: 'commander', antiair: 'antiAir', 'anti-air': 'antiAir', aa: 'antiAir' };
 
 async function request(path) {
   if (!config.RAID_HELPER_API_TOKEN) throw new Error('Raid-Helper API token is not configured.');
