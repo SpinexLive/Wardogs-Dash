@@ -4,6 +4,7 @@ const store = require('../lib/store');
 const steamStore = require('../lib/steamStore');
 const rcon = require('../lib/rcon');
 const wardogs = require('../lib/wardogs');
+const tournament = require('../lib/tournament');
 const { requireAuth, requireDashboardAccess } = require('../middleware/auth');
 
 const router = express.Router();
@@ -62,6 +63,18 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
       }
     }
 
+    let tournamentError = null;
+    let registeredDiscordIds = new Set();
+    if (tournament.isConfigured()) {
+      try {
+        registeredDiscordIds = await tournament.getRegisteredDiscordIds();
+      } catch (_) {
+        tournamentError = 'Tournament registration status is temporarily unavailable.';
+      }
+    } else {
+      tournamentError = 'Tournament registration status is unavailable until its API key is configured.';
+    }
+
     const membersWithLiveStatus = members.map((member) => {
       const steamId = steamIds[member.id] || null;
       const livePlayer = steamId ? connectedPlayers.get(String(steamId)) : null;
@@ -75,6 +88,7 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
         kd: stats ? stats.kd.toFixed(2) : null,
         isRecruit: Boolean(access.recruitRankRoleId && member.roles.includes(access.recruitRankRoleId)),
         isMemberRank: Boolean(access.memberRankRoleId && member.roles.includes(access.memberRankRoleId)),
+        tournamentRegistered: registeredDiscordIds.has(String(member.id)),
       };
     });
 
@@ -89,6 +103,7 @@ router.get('/', requireAuth, requireDashboardAccess, async (req, res, next) => {
       serverConfigured: rcon.isConfigured(),
       serverError,
       performanceError,
+      tournamentError,
     });
   } catch (err) {
     next(err);

@@ -17,6 +17,7 @@
 
     <% if (serverError) { %><p class="error-banner"><%= serverError %></p><% } else if (!serverConfigured) { %><p class="notice-banner">Live server presence is unavailable until RCON is configured.</p><% } %>
     <% if (performanceError) { %><p class="notice-banner"><%= performanceError %></p><% } %>
+    <% if (tournamentError) { %><p class="notice-banner"><%= tournamentError %></p><% } %>
 
     <section class="metric-grid member-metric-grid">
       <%- include('partials/metric-card', { label: 'Roster members', value: members.length, detail: 'Across configured roles' }) %>
@@ -35,7 +36,7 @@
           <table class="member-table">
             <thead><tr>
               <th><button type="button" class="member-sort" data-sort-key="member">Member</button></th>
-              <th>Server</th><th>Steam identity</th>
+              <th>Server</th><th>Steam identity</th><th>Tournament</th>
               <th><button type="button" class="member-sort" data-sort-key="kills">Kills</button></th>
               <th><button type="button" class="member-sort" data-sort-key="deaths">Deaths</button></th>
               <th><button type="button" class="member-sort" data-sort-key="kd">K/D</button></th>
@@ -46,6 +47,7 @@
                   <td><div class="member-identity"><img class="member-avatar" src="<%= member.avatar %>" alt="" /><div><strong><%= member.nickname %></strong><div class="member-ranks"><% if (member.isRecruit) { %><span class="rank-badge rank-recruit">Recruit</span><% } %><% if (member.isMemberRank) { %><span class="rank-badge rank-member">Member</span><% } %><% if (!member.isRecruit && !member.isMemberRank) { %><span class="rank-badge rank-unassigned">Unranked</span><% } %></div></div></div></td>
                   <td><span class="server-presence <%= member.online ? 'server-presence--online' : '' %>"><i></i><%= member.online ? 'On server' : 'Offline' %></span></td>
                   <td><button type="button" class="steam-id-btn steam-id-btn--table <%= member.steamId ? 'steam-id-btn--linked' : '' %>" data-dialog="steam-dialog-<%= member.id %>"><span class="steam-id-dot"></span><%= member.steamId || 'Link Steam ID' %></button></td>
+                  <td><span class="vip-status <%= member.tournamentRegistered ? 'vip-status--active' : '' %>"><i></i><%= member.tournamentRegistered ? 'Registered' : 'Not registered' %></span></td>
                   <td class="performance-value"><%= member.kills === null ? '—' : member.kills.toLocaleString() %></td>
                   <td class="performance-value"><%= member.deaths === null ? '—' : member.deaths.toLocaleString() %></td>
                   <td class="performance-value performance-value--kd"><%= member.kd ?? '—' %></td>

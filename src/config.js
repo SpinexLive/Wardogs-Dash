@@ -36,4 +36,6 @@ module.exports = {
   RAID_HELPER_API_TOKEN: process.env.RAID_HELPER_API_TOKEN || '',
   DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY || '',
   WARDOGS_API_KEY: process.env.WARDOGS_API_KEY || '',
+  // Team-scoped key for the Wardogs League tournament API (wardogsleague.net).
+  TOURNAMENT_API_KEY: process.env.TOURNAMENT_API_KEY || '',
 };
